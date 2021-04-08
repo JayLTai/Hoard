@@ -1,6 +1,7 @@
-from web3 import Web3
+from web3 import Web3, middleware
+from web3.gas_strategies.time_based import *
 import json
-
+import pdb
 
 #Infura HTTP MainNet:
 _Mainnet_http = Web3(Web3.HTTPProvider('https://mainnet.infura.io/v3/cfafd2526e9e45c8947689373933aa87'))
@@ -21,20 +22,27 @@ BusinessChinaman_address = '0xa2841602F157F4F5195dA04EC6EF5e38C5E355c2'
 BusinessChinaman_prvkey = '9d0752977e272a0d5e012e113d48176a3592b944de505b8ca8aaf81bc7b302d3'
 
 
-
-web3 = _Ropsten_http
-
-print("Connection to the blockchain is : {}".format(web3.isConnected()))
-
+#connecting to the blockchain
+web3 = _Ropsten_websocket
+print("!!!!!!!!!!  Connection to the blockchain is : {}  !!!!!!!!!".format(web3.isConnected()))
+print("**********************************************************************************")
 JT_Main_balance = web3.eth.get_balance(JT_Main_address)
 AmericanChinaman_balance = web3.eth.get_balance(AmericanChinaman_address)
 BusinessChinaman_balance = web3.eth.get_balance(BusinessChinaman_address)
 print("JT's Main account balance in wei is : {}".format(JT_Main_balance))
 print("AmericanChinaman's account balance in wei is : {}".format(AmericanChinaman_balance))
 print("BusinessChinaman's account balance in wei is : {}".format(BusinessChinaman_balance))
+print("**********************************************************************************")
 print("JT's Main account balance in ether is : {}".format(web3.fromWei(JT_Main_balance, 'ether')))
 print("AmericanChinaman's account balance in ether is : {}".format(web3.fromWei(AmericanChinaman_balance, 'ether')))
 print("BusinessChinaman's account balance in ether is : {}".format(web3.fromWei(BusinessChinaman_balance, 'ether')))
+print("**********************************************************************************")
+print("AmericanChinaman's transaction number is : {}".format(web3.eth.get_transaction_count(AmericanChinaman_address)))
+
+#setting gas price strategy
+web3.eth.setGasPriceStrategy(fast_gas_price_strategy)
+
+
 
 def mk_simple_transaction(from_addr, to_addr, send_value):
     """
@@ -48,8 +56,10 @@ def mk_simple_transaction(from_addr, to_addr, send_value):
         a dictionary object representing the created simple transaction
     """
     transaction = dict(
-        nonce = web3.eth.getTransactionCount(from_addr),
+        nonce = web3.eth.get_transaction_count(from_addr),
         gasPrice = web3.eth.gasPrice,
+        # there must be an automated way to automatically set the gas price
+        # based off of the gas strategy
         gas = 100000,
         to = to_addr,
         value = web3.toWei(send_value, 'wei')
@@ -70,13 +80,109 @@ def sign_transaction(transaction, prvkey):
 def send_transaction(signd_txn):
     """
     sends a signed and serialized transaction. 
+    converts that returned HexBytes object into a string hex hash
     Args:
         signed_txn [obj] : a signed transaction obejct
     Returns:
         the transaction hash as a HexBytes object
     """
-    return web3.eth.send_raw_transaction(signd_txn.rawTransaction)
+    return web3.eth.send_raw_transaction(signd_txn.rawTransaction).hex()
 
-txn = mk_simple_transaction(AmericanChinaman_address,BusinessChinaman_address,1)
+def wait_for_receipt(txn_hash, timeout=120, poll_latency=0.1):
+    """
+    waits for the traansaction specified by the given transaction hash to be 
+    included in a block. Then returns the transaction receipt
+    Args:
+        txn_hash (str)      : string representing the transaction hash after its been
+                             sent
+        timeout (int)       : OPTIONAL a timeout for waiting for the receipt
+        poll_latency (int)  : OPTIONAL latency at which to poll for receipt
+    Returns:
+        Attribute object which is the receipt of the transaction once added to a block
+        EX:
+            AttributeDict({
+                'blockHash': '0x4e3a3754410177e6937ef1f84bba68ea139e8d1a2258c5f85db9f1cd715a1bdd',
+                'blockNumber': 46147,
+                'contractAddress': None,
+                'cumulativeGasUsed': 21000,
+                'from': '0xA1E4380A3B1f749673E270229993eE55F35663b4',
+                'gasUsed': 21000,
+                'logs': [],
+                'logsBloom': '0x000000000000000000000000000000000000000000000000...0000',
+                'status': 1,
+                'to': '0x5DF9B87991262F6BA471F09758CDE1c0FC1De734',
+                'transactionHash': '0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060',
+                'transactionIndex': 0,
+            })
+    """
+    return web3.eth.waitForTransactionReceipt(txn_hash,timeout,poll_latency)
+
+def get_tnx_block(block_id, full_transactions=False):
+    """
+    gets the block information of a given block, identified with its block hash
+    Args:
+        block_id (int) : an int representing the ID of the block
+    Returns:
+        Dicionary object that represents the depicts all that goes into a 
+        transaction boss
+        EX:
+            AttributeDict({
+                'difficulty': 49824742724615,
+                'extraData': '0xe4b883e5bda9e7a59ee4bb99e9b1bc',
+                'gasLimit': 4712388,
+                'gasUsed': 21000,
+                'hash': '0xc0f4906fea23cf6f3cce98cb44e8e1449e455b28d684dfa9ff65426495584de6',
+                'logsBloom': '0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+                'miner': '0x61c808d82a3ac53231750dadc13c777b59310bd9',
+                'nonce': '0x3b05c6d5524209f1',
+                'number': 2000000,
+                'parentHash': '0x57ebf07eb9ed1137d41447020a25e51d30a0c272b5896571499c82c33ecb7288',
+                'receiptRoot': '0x84aea4a7aad5c5899bd5cfc7f309cc379009d30179316a2a7baa4a2ea4a438ac',
+                'sha3Uncles': '0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347',
+                'size': 650,
+                'stateRoot': '0x96dbad955b166f5119793815c36f11ffa909859bbfeb64b735cca37cbf10bef1',
+                'timestamp': 1470173578,
+                'totalDifficulty': 44010101827705409388,
+                'transactions': ['0xc55e2b90168af6972193c1f86fa4d7d7b31a29c156665d15b9cd48618b5177ef'],
+                'transactionsRoot': '0xb31f174d27b99cdae8e746bd138a01ce60d8dd7b224f7c60845914def05ecc58',
+                'uncles': [],
+            })
+    
+    """
+    return web3.eth.get_block(block_id, full_transactions)
+
+
+
+#Transaction sequence moving from AmericanChinaman to BusinessChinaman
+
+print('{s:{c}^{n}}'.format(s=' creating transaction data ', n=80, c='*'))
+txn = mk_simple_transaction(AmericanChinaman_address,BusinessChinaman_address,10000)
+print(txn)
+print('{s:{c}^{n}}'.format(s=' signing transaction ', n=80, c='*'))
 signed_txn = sign_transaction(txn, AmericanChinaman_prvkey)
-print(send_transaction(signed_txn))
+print("signed transaction hash = {}".format(signed_txn))
+print('{s:{c}^{n}}'.format(s=' sending transaction ', n=80, c='*'))
+txn_hash = send_transaction(signed_txn)
+print("transaction hash = {}".format(txn_hash))
+print('{s:{c}^{n}}'.format(s=' getting transaction receipt ', n=80, c='*'))
+receipt = wait_for_receipt(txn_hash)
+# pdb.set_trace()
+print(receipt)
+print('{s:{c}^{n}}'.format(s=' getting block transaction was a part of ', n=80, c='*'))\
+#realistically this part of confirming the status of the block & transaction (mined or not)
+#might be able to be checked using the reciept? Not sure though
+#Answer : Looks like once we get a receipt from the transaction, the transaction will have
+# been completed and added to the ledger (aka block is mined i believe)
+block = get_tnx_block(receipt.blockNumber)
+# pdb.set_trace()
+print(block)
+print("**********************************************************************************")
+print("AmericanChinaman's OLD account balance in wei is : {}".format(AmericanChinaman_balance))
+AmericanChinaman_balance = web3.eth.get_balance(AmericanChinaman_address)
+print("AmericanChinaman's NEW account balance in wei is : {}".format(AmericanChinaman_balance))
+print("                   ----------------------------------------                       ")
+print("BusinessChinaman's NEW account balance in wei is : {}".format(BusinessChinaman_balance))
+BusinessChinaman_balance = web3.eth.get_balance(BusinessChinaman_address)
+print("BusinessChinaman's OLD account balance in wei is : {}".format(BusinessChinaman_balance))
+#this sequence seems to be flakey occasionally. no idea why. probabaly a timing thing that might 
+#might go away with differnet impelmentation
