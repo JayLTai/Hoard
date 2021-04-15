@@ -3,6 +3,12 @@ from web3.gas_strategies.time_based import *
 import json
 import pdb
 
+class Wallet:
+    def __init__(self,name,address,prvkey):
+        self.name = name
+        self.address = address
+        self.prvkey = prvkey
+
 #Infura HTTP MainNet:
 _Mainnet_http = Web3(Web3.HTTPProvider('https://mainnet.infura.io/v3/cfafd2526e9e45c8947689373933aa87'))
 #Infura websocket MainNet:
@@ -151,38 +157,46 @@ def get_tnx_block(block_id, full_transactions=False):
     """
     return web3.eth.get_block(block_id, full_transactions)
 
+def trade(send_Wallet, rcv_Wallet, amount):
+    send_balance = web3.eth.get_balance(send_Wallet.address)
+    recv_balance = web3.eth.get_balance(rcv_Wallet.address)
+    #Transaction sequence moving from send_Wallet to rcv_Wallet
+    print('{s:{c}^{n}}'.format(s=' creating transaction data ', n=80, c='*'))
+    txn = mk_simple_transaction(send_Wallet.address,rcv_Wallet.address,amount)
+    print(txn)
+    print('{s:{c}^{n}}'.format(s=' signing transaction ', n=80, c='*'))
+    signed_txn = sign_transaction(txn, send_Wallet.prvkey)
+    print("signed transaction hash = {}".format(signed_txn))
+    print('{s:{c}^{n}}'.format(s=' sending transaction ', n=80, c='*'))
+    txn_hash = send_transaction(signed_txn)
+    print("transaction hash = {}".format(txn_hash))
+    print('{s:{c}^{n}}'.format(s=' getting transaction receipt ', n=80, c='*'))
+    receipt = wait_for_receipt(txn_hash)
+    # pdb.set_trace()
+    print(receipt)
+    print('{s:{c}^{n}}'.format(s=' getting block transaction was a part of ', n=80, c='*'))\
+    #realistically this part of confirming the status of the block & transaction (mined or not)
+    #might be able to be checked using the reciept? Not sure though
+    #Answer : Looks like once we get a receipt from the transaction, the transaction will have
+    # been completed and added to the ledger (aka block is mined i believe)
+    block = get_tnx_block(receipt.blockNumber)
+    # pdb.set_trace()
+    print(block)
+    print("**********************************************************************************")
+    print("{name}'s OLD account balance in wei is : {amount}".format(name=send_Wallet.name,amount=send_balance))
+    send_balance = web3.eth.get_balance(send_balance)
+    print("{name}'s NEW account balance in wei is : {amount}".format(name=send_Wallet.name,amount=send_balance))
+    print("                   ----------------------------------------                       ")
+    print("{name}'s OLD account balance in wei is : {amount}".format(name=recv_Wallet.name,amount=recv_balance))
+    recv_balance = web3.eth.get_balance(send_balance)
+    print("{name}'s NEW account balance in wei is : {amount}".format(name=recv_Wallet.name,amount=recv_balance))
+    #this sequence seems to be flakey occasionally. no idea why. probabaly a timing thing that might 
+    #might go away with differnet impelmentation
 
 
-#Transaction sequence moving from AmericanChinaman to BusinessChinaman
 
-print('{s:{c}^{n}}'.format(s=' creating transaction data ', n=80, c='*'))
-txn = mk_simple_transaction(AmericanChinaman_address,BusinessChinaman_address,10000)
-print(txn)
-print('{s:{c}^{n}}'.format(s=' signing transaction ', n=80, c='*'))
-signed_txn = sign_transaction(txn, AmericanChinaman_prvkey)
-print("signed transaction hash = {}".format(signed_txn))
-print('{s:{c}^{n}}'.format(s=' sending transaction ', n=80, c='*'))
-txn_hash = send_transaction(signed_txn)
-print("transaction hash = {}".format(txn_hash))
-print('{s:{c}^{n}}'.format(s=' getting transaction receipt ', n=80, c='*'))
-receipt = wait_for_receipt(txn_hash)
-# pdb.set_trace()
-print(receipt)
-print('{s:{c}^{n}}'.format(s=' getting block transaction was a part of ', n=80, c='*'))\
-#realistically this part of confirming the status of the block & transaction (mined or not)
-#might be able to be checked using the reciept? Not sure though
-#Answer : Looks like once we get a receipt from the transaction, the transaction will have
-# been completed and added to the ledger (aka block is mined i believe)
-block = get_tnx_block(receipt.blockNumber)
-# pdb.set_trace()
-print(block)
-print("**********************************************************************************")
-print("AmericanChinaman's OLD account balance in wei is : {}".format(AmericanChinaman_balance))
-AmericanChinaman_balance = web3.eth.get_balance(AmericanChinaman_address)
-print("AmericanChinaman's NEW account balance in wei is : {}".format(AmericanChinaman_balance))
-print("                   ----------------------------------------                       ")
-print("BusinessChinaman's NEW account balance in wei is : {}".format(BusinessChinaman_balance))
-BusinessChinaman_balance = web3.eth.get_balance(BusinessChinaman_address)
-print("BusinessChinaman's OLD account balance in wei is : {}".format(BusinessChinaman_balance))
-#this sequence seems to be flakey occasionally. no idea why. probabaly a timing thing that might 
-#might go away with differnet impelmentation
+AmericanChinaman = Wallet('AmericanChinaman',AmericanChinaman_address,AmericanChinaman_prvkey)
+BusinessChinaman = Wallet('BusinessChinaman',BusinessChinaman_address,BusinessChinaman_prvkey)
+
+trade(AmericanChinaman, BusinessChinaman, 10000000)
+trade(BusinessChinaman, AmericanChinaman, 10000000)
