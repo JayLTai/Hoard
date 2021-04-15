@@ -3,6 +3,10 @@ from web3.gas_strategies.time_based import *
 import json
 import pdb
 
+class Hoard:
+    def __init__(self):
+        self.wallets = {}
+
 class Wallet:
     def __init__(self,name,address,prvkey):
         self.name = name
@@ -157,12 +161,12 @@ def get_tnx_block(block_id, full_transactions=False):
     """
     return web3.eth.get_block(block_id, full_transactions)
 
-def trade(send_Wallet, rcv_Wallet, amount):
+def trade(send_Wallet, recv_Wallet, amount):
     send_balance = web3.eth.get_balance(send_Wallet.address)
-    recv_balance = web3.eth.get_balance(rcv_Wallet.address)
+    recv_balance = web3.eth.get_balance(recv_Wallet.address)
     #Transaction sequence moving from send_Wallet to rcv_Wallet
     print('{s:{c}^{n}}'.format(s=' creating transaction data ', n=80, c='*'))
-    txn = mk_simple_transaction(send_Wallet.address,rcv_Wallet.address,amount)
+    txn = mk_simple_transaction(send_Wallet.address,recv_Wallet.address,amount)
     print(txn)
     print('{s:{c}^{n}}'.format(s=' signing transaction ', n=80, c='*'))
     signed_txn = sign_transaction(txn, send_Wallet.prvkey)
@@ -184,11 +188,11 @@ def trade(send_Wallet, rcv_Wallet, amount):
     print(block)
     print("**********************************************************************************")
     print("{name}'s OLD account balance in wei is : {amount}".format(name=send_Wallet.name,amount=send_balance))
-    send_balance = web3.eth.get_balance(send_balance)
+    send_balance = web3.eth.get_balance(send_Wallet.address)
     print("{name}'s NEW account balance in wei is : {amount}".format(name=send_Wallet.name,amount=send_balance))
     print("                   ----------------------------------------                       ")
     print("{name}'s OLD account balance in wei is : {amount}".format(name=recv_Wallet.name,amount=recv_balance))
-    recv_balance = web3.eth.get_balance(send_balance)
+    recv_balance = web3.eth.get_balance(recv_Wallet.address)
     print("{name}'s NEW account balance in wei is : {amount}".format(name=recv_Wallet.name,amount=recv_balance))
     #this sequence seems to be flakey occasionally. no idea why. probabaly a timing thing that might 
     #might go away with differnet impelmentation
@@ -198,5 +202,14 @@ def trade(send_Wallet, rcv_Wallet, amount):
 AmericanChinaman = Wallet('AmericanChinaman',AmericanChinaman_address,AmericanChinaman_prvkey)
 BusinessChinaman = Wallet('BusinessChinaman',BusinessChinaman_address,BusinessChinaman_prvkey)
 
+AC_before_1 = web3.eth.get_balance(AmericanChinaman.address)
+BC_before_1 = web3.eth.get_balance(BusinessChinaman.address)
 trade(AmericanChinaman, BusinessChinaman, 10000000)
+AC_after_1 = web3.eth.get_balance(AmericanChinaman.address)
+BC_after_1 = web3.eth.get_balance(BusinessChinaman.address)
 trade(BusinessChinaman, AmericanChinaman, 10000000)
+AC_after_2 = web3.eth.get_balance(AmericanChinaman.address)
+BC_after_2 = web3.eth.get_balance(BusinessChinaman.address)
+
+print("{name}'s  account balance went from  : {a1} ----> {a2} ----> {a3}".format(name=AmericanChinaman.name,a1=AC_before_1, a2=AC_after_1, a3=AC_after_2))
+print("{name}'s  account balance went from  : {a1} ----> {a2} ----> {a3}".format(name=BusinessChinaman.name,a1=BC_before_1, a2=BC_after_1, a3=BC_after_2))
