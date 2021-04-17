@@ -33,6 +33,7 @@ BusinessChinaman_prvkey = '9d0752977e272a0d5e012e113d48176a3592b944de505b8ca8aaf
 
 
 #connecting to the blockchain
+#WebSocket connection can scale vertically on a single server, whereas REST, which is HTTP based, can scale horizontally.
 web3 = _Ropsten_websocket
 print("!!!!!!!!!!  Connection to the blockchain is : {}  !!!!!!!!!".format(web3.isConnected()))
 print("**********************************************************************************")
