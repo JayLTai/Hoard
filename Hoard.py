@@ -14,3 +14,8 @@ PrivateKeys = {
 Kraken = Kraken_Harness(apiPublicKey = PublicKeys['kraken'], apiPrivateKey = PrivateKeys['kraken'])
 print(Kraken.get_servertime())
 print(Kraken.get_systemstatus())
+# print(Kraken.get_assetinfo())
+print("_____________________________________________________")
+print(Kraken.get_assetinfo(asset = 'XETH'))
+# print("_____________________________________________________")
+print(Kraken.get_assetinfo(aclass = 'currency', asset = 'DAI'))

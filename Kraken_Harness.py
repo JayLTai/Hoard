@@ -1,23 +1,4 @@
-# Crypto Facilities Ltd REST API v3
-
-# Copyright (c) 2018 Crypto Facilities
-
-# Permission is hereby granted, free of charge, to any person obtaining
-# a copy of this software and associated documentation files (the "Software"),
-# to deal in the Software without restriction, including without limitation
-# the rights to use, copy, modify, merge, publish, distribute, sublicense,
-# and/or sell copies of the Software, and to permit persons to whom the
-# Software is furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included
-# in all copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-# WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-# IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# reference : https://github.com/CryptoFacilities/REST-v3-Python/blob/master/cfRestApiV3.py
 
 import time
 import base64
@@ -40,6 +21,8 @@ class Kraken_Harness:
         self.useNonce = useNonce
 
  # signs a message
+ # https://support.kraken.com/hc/en-us/articles/360022635592-Generate-authentication-strings-REST-API-\
+ # https://support.kraken.com/hc/en-us/articles/360029054811-What-is-the-authentication-algorithm-for-private-endpoints-
     def sign_message(self, endpoint, postData, nonce=""):
 
         # Decode API private key from base64 format displayed in account management
@@ -47,7 +30,7 @@ class Kraken_Harness:
         
         # Variables (API method, nonce, and POST data)
         api_path = endpoint
-        api_nonce = str(int(time.time()*1000))
+        api_nonce =self.get_nonce()
         api_post = "nonce=" + api_nonce + "&asset=" + postData
         
         # Cryptographic hash algorithms
@@ -129,6 +112,15 @@ class Kraken_Harness:
             raise RuntimeError('Got REST call error : {}'.format(response['error']))
         return result
 
+    def build_data(self,data):
+        """
+        processes a dictionary object into a json data object to be sent with a REST cal
+        Args:
+            data : a dictionary object to be converted into a json object
+        Returns:
+            the json object
+        """
+        return json.dumps(data)
 
     ######################
     #    api functions   #
@@ -136,6 +128,9 @@ class Kraken_Harness:
 
     #for more information visit: https://www.kraken.com/en-us/features/api
     #all functions here can be found in the link above with corresponding REST docs
+    # api_private_get = {"accounts", "openorders", "fills", "openpositions", "transfers", "notifications", "historicorders", "recentorders"}
+    # api_private_post = {"transfer", "sendorder", "cancelorder", "cancelallorders", "cancelallordersafter", "batchorder", "withdrawal"}
+
 
     def get_servertime(self):
         endpoint = '/0/public/Time'
@@ -144,3 +139,19 @@ class Kraken_Harness:
     def get_systemstatus(self):
         endpoint = '/0/public/SystemStatus'
         return self.process_response(self.make_request('GET', endpoint))
+
+    def get_assetinfo(self, info = "", aclass = "", asset = ""):
+        #info default = all info
+        #aclass default = currency
+        #asset default = all for given asset class
+        endpoint = '/0/public/Assets'
+        postURL = ''
+        data = dict(zip(['info','aclass','asset'],[info,aclass,asset]))
+        for key,item in data.items():
+            #if the item is not an empty string
+            if not not item:
+                if not postURL:
+                    postURL = '{k}={i}'.format(k=key, i=item)
+                else:
+                    postURL = postURL + '&{k}={i}'.format(k=key, i=item)
+        return self.process_response(self.make_request('GET', endpoint, postUrl = postURL))
