@@ -12,6 +12,7 @@ import _thread as thread
 import json
 from datetime import datetime
 import requests
+import pdb
 
 if int(platform.python_version_tuple()[0]) > 2:
 	import urllib.request as urllib2
@@ -35,7 +36,7 @@ def QueryPrivateEndpoint(endpointName, inputParameters, apiPublicKey, apiPrivate
   apiEndpointFullURL = baseDomain + privatePath + endpointName
   nonce = str(int(time.time()*1000))
   apiPostBodyData = "nonce=" + nonce + inputParameters
-
+  pdb.set_trace()
   apiPostData = inputParameters + "&nonce=" + nonce
   apiPostData = apiPostData.encode('utf-8')
 
@@ -62,6 +63,7 @@ def CreateAuthenticationSignature(apiPrivateKey,
                                   nonce, 
                                   apiPostData):
 
+  pdb.set_trace()
   sha256Data = nonce.encode('utf-8') + apiPostData
   sha256Hash = hashlib.sha256(sha256Data).digest()
 
@@ -103,8 +105,8 @@ def WebSocketOnOpen(ws):
 #RUN APP
 
 #TODO: UPDATE WITH YOUR KEYS :)
-apiPublicKey = "YOUR_PUBLIC_KEY"
-apiPrivateKey = "YOUR_PRIVATE_KEY"
+apiPublicKey = "KPLlDob0WfygtiDknD0BG6TkuWDuEGC+zaNoYXry9nK4E0ayWmgubX1D"
+apiPrivateKey = "j6tvLYKj7Pz5z6AhsG7Rd0sgN1+nyptOPt3g7A1X8MQYApfQh1AyM7VsTrVT6S4zqXEd1udU02NQNTTd0HFdoQ=="
 apiPrivateKey = base64.b64decode(apiPrivateKey)
 
 print("|=========================================|") 
@@ -128,14 +130,14 @@ publicInputParameters = ""
 #publicEndpoint = "AssetPairs"
 #publicInputParameters = "pair=ethusd,xbtusd"
 
-#publicEndpoint = "Ticker"
-#publicInputParameters = "pair=ethusd"
+publicEndpoint = "Ticker"
+publicInputParameters = "pair=ethusd"
 
 #publicEndpoint = "Trades"
 #publicInputParameters = "pair=ethusd&since=0"
 #*
 
-#publicResponse = QueryPublicEndpoint(publicEndpoint, publicInputParameters)
+publicResponse = QueryPublicEndpoint(publicEndpoint, publicInputParameters)
 print(publicResponse)
 
 ##########
@@ -149,7 +151,7 @@ privateResponse = ""
 privateEndpoint = "Balance"
 privateInputParameters = ""
 
-#privateResponse = QueryPrivateEndpoint(privateEndpoint, privateInputParameters, apiPublicKey, apiPrivateKey)
+privateResponse = QueryPrivateEndpoint(privateEndpoint, privateInputParameters, apiPublicKey, apiPrivateKey)
 print(privateResponse)
 
 ##########
@@ -157,8 +159,8 @@ print(privateResponse)
 # Public WebSocket API Examples
 #
 ##########
-publicWebSocketURL = "wss://ws.kraken.com/"
-webSocketSubscription = "{ \"event\": \"subscribe\", \"subscription\": { \"name\": \"ticker\"}, \"pair\": [ \"XBT/EUR\",\"ETH/USD\" ]}"
+# publicWebSocketURL = "wss://ws.kraken.com/"
+# webSocketSubscription = "{ \"event\": \"subscribe\", \"subscription\": { \"name\": \"ticker\"}, \"pair\": [ \"XBT/EUR\",\"ETH/USD\" ]}"
 
 #MORE PUBLIC WEBSOCKET EXAMPLES
 #*
@@ -173,26 +175,26 @@ webSocketSubscription = "{ \"event\": \"subscribe\", \"subscription\": { \"name\
 # Private WebSocket API Examples
 #
 ##########
-privateWebSocketURL = "wss://ws-auth.kraken.com/"
-webSocketSubscription = "{ \"event\": \"subscribe\", \"subscription\": { \"name\": \"ownTrades\", \"token\": \"#TOKEN#\"}}"
+# privateWebSocketURL = "wss://ws-auth.kraken.com/"
+# webSocketSubscription = "{ \"event\": \"subscribe\", \"subscription\": { \"name\": \"ownTrades\", \"token\": \"#TOKEN#\"}}"
 
-#MORE PRIVATE WEBSOCKET EXAMPLES
-#*
-# #TOKEN# IS A PLACEHOLDER
+# #MORE PRIVATE WEBSOCKET EXAMPLES
+# #*
+# # #TOKEN# IS A PLACEHOLDER
 
-#webSocketSubscription = "{ \"event\": \"subscribe\", \"subscription\": { \"name\": \"openOrders\", \"token\": \"#TOKEN#\"}}"
-#webSocketSubscription = "{ \"event\": \"subscribe\", \"subscription\": { \"name\": \"balances\", \"token\": \"#TOKEN#\"}}"
-#addOrderExample =  "{\"event\":\"addOrder\",\"reqid\":1234,\"ordertype\":\"limit\",\"pair\":\"XBT/EUR\",\"token\":\"#TOKEN#\",\"type\":\"buy\",\"volume\":\"1\", \"price\":\"1.00\"}"
-#*
+# #webSocketSubscription = "{ \"event\": \"subscribe\", \"subscription\": { \"name\": \"openOrders\", \"token\": \"#TOKEN#\"}}"
+# #webSocketSubscription = "{ \"event\": \"subscribe\", \"subscription\": { \"name\": \"balances\", \"token\": \"#TOKEN#\"}}"
+# #addOrderExample =  "{\"event\":\"addOrder\",\"reqid\":1234,\"ordertype\":\"limit\",\"pair\":\"XBT/EUR\",\"token\":\"#TOKEN#\",\"type\":\"buy\",\"volume\":\"1\", \"price\":\"1.00\"}"
+# #*
 
-#GET AND EXTRACT THE WEBSOCKET TOKEN FORM THE JSON RESPONSE
-webSocketRestResponseJSON = QueryPrivateEndpoint("GetWebSocketsToken", "", apiPublicKey, apiPrivateKey)
-jsonObject = json.loads(webSocketRestResponseJSON)
-webSocketToken = jsonObject['result']['token']
+# #GET AND EXTRACT THE WEBSOCKET TOKEN FORM THE JSON RESPONSE
+# webSocketRestResponseJSON = QueryPrivateEndpoint("GetWebSocketsToken", "", apiPublicKey, apiPrivateKey)
+# jsonObject = json.loads(webSocketRestResponseJSON)
+# webSocketToken = jsonObject['result']['token']
 
-#REPLACE PLACEHOLDER WITH TOKEN
-webSocketSubscription = webSocketSubscription.replace("#TOKEN#", webSocketToken)
-OpenAndStreamWebSocketSubscription(privateWebSocketURL)
+# #REPLACE PLACEHOLDER WITH TOKEN
+# webSocketSubscription = webSocketSubscription.replace("#TOKEN#", webSocketToken)
+# OpenAndStreamWebSocketSubscription(privateWebSocketURL)
 
 
                 
