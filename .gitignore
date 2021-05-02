@@ -128,3 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 .vscode/settings.json
+
+# Security and examples
+keys.json
+kraken_CLI.py
+kraken_example.py
