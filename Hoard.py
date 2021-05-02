@@ -1,54 +1,42 @@
-from  Eth_tools import *
-# import Tree
-from Kraken_Harness import *
 import json
+import os
 
-PublicKeys = {
-    'kraken' : "KPLlDob0WfygtiDknD0BG6TkuWDuEGC+zaNoYXry9nK4E0ayWmgubX1D"
-}
+class Hoard:
+    """
+    Hoard will be the overarching class object that will manage all the trading 
+    and financial information. 
+    Args:
+        Eth       : (Eth Object) an Eth object, representing the connection to 
+                    the ethereum blockchain
+        wallets   : (dict) a dictionary of Wallet objects 
+                    {name (string) : (address,private key)}
+                    This needs to be turned into a database that has:
+                        wallet amount
+                        wallet transaction log
+                        wallet nonce
+                    maybe create an object that gets populated by the databse call
+        Kraken     : (Kraken_Harness Object) a Kraken_Harness object representing 
+                     the connection to a Kraken Exchange API
+        Trading information : tbd
+        other stuff tbd
+    Attributes:
+        Eth       : (Eth Object) an Eth object, representing the connection to 
+                    the ethereum blockchain
+        wallets   : (dict) a dictionary of Wallet objects 
+                    {name (string) : (address,private key)}
 
-PrivateKeys = {
-    'kraken' : "j6tvLYKj7Pz5z6AhsG7Rd0sgN1+nyptOPt3g7A1X8MQYApfQh1AyM7VsTrVT6S4zqXEd1udU02NQNTTd0HFdoQ=="
-}
+    """
+    def __init__(self, Eth_Harness = None, wallets = {}, Kraken = None):
+        self.Eth_Harness = Eth_Harness
+        self.wallets = wallets
+        self.Kraken_Harness = Kraken
+    
+    def add_wallet(self,name,currency,address,prvKey=""):
+        """
+        adds a new wallet (address,private key) tuple to the wallet dictionary
+        Args:
+            name    : (string) name of the wallet
+            address : (string) wallet public address
+            prvKey  : (string) wallet private key
+        """
 
-Kraken = Kraken_Harness(apiPublicKey = PublicKeys['kraken'], apiPrivateKey = PrivateKeys['kraken'])
-print(Kraken.get_servertime())
-print(Kraken.get_systemstatus())
-# print(Kraken.get_assetinfo())
-print("_____________________________________________________")
-print(Kraken.get_assetinfo(asset = 'XETH'))
-# print("_____________________________________________________")
-print(Kraken.get_assetinfo(aclass = 'currency', asset = 'DAI'))
-print("_____________________________________________________")
-print("____________________Asset Pairs______________________")
-print("_____________________________________________________")
-print(Kraken.get_assetpairs(info = "info", pair = 'ETHUSD'))
-print("_____________________________________________________")
-print(Kraken.get_assetpairs(info = "info", pair = 'ETHBTC'))
-print("_____________________________________________________")
-print("____________________Ticker Info______________________")
-print("_____________________________________________________")
-print(Kraken.get_tickerinfo(pair = 'ETHUSD'))
-print("_____________________________________________________")
-print("______________________OHLC Info______________________")
-print("_____________________________________________________")
-print(Kraken.get_ohlc(pair = 'ETHUSD', interval = '1'))
-print("_____________________________________________________")
-print("______________________Order Book_____________________")
-print("_____________________________________________________")
-print(Kraken.get_orderbook(pair = 'ETHUSD', count = '1'))
-print("_____________________________________________________")
-print("____________________Recent Trades____________________")
-print("_____________________________________________________")
-print(Kraken.get_recenttrades(pair = 'ETHUSD'))
-print("_____________________________________________________")
-print("_________________Recent Spread Data__________________")
-print("_____________________________________________________")
-print(Kraken.get_recentspread(pair = 'ETHUSD'))
-print('{s:{c}^{n}}'.format(s='      +      ', n=100, c='+'))
-print('{s:{c}^{n}}'.format(s='      +      ', n=100, c='+'))
-print('{s:{c}^{n}}'.format(s='      PRIVATE STUFF      ', n=100, c='+'))
-print('{s:{c}^{n}}'.format(s='      +      ', n=100, c='+'))
-print('{s:{c}^{n}}'.format(s='      +      ', n=100, c='+'))
-# print(Kraken.get_tradebalance(aclass = 'currency', asset ='XETH'))
-print(Kraken.get_accountbalance())

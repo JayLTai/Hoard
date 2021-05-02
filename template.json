@@ -1,0 +1,38 @@
+{
+    "Infura":{
+        "Mainnet" : {
+            "HTTP" : "",
+            "Websocket" : ""
+        },
+        "Ropsten" : {
+            "HTTP" : "",
+            "Websocket" : ""
+        }
+    },
+
+    "Kraken" : {
+        "TEST" : {
+            "APIKey" : "",
+            "PrivateKey" : ""
+        } 
+    },
+
+    "Wallets" : {
+        "JT" : {
+            "Currency"   : "Ropsten",
+            "Address"    : "",
+            "PrivateKey" : ""
+        },
+        "AmericanChinaman" : {
+            "Currency"   : "Eth",
+            "Address"    : "",
+            "PrivateKey" : ""
+        },
+        "BusinessChinaman" : {
+            "Currency"   : "Ropsten",
+            "Address"    : "",
+            "PrivateKey" : ""
+        }
+    }
+
+}
