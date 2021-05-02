@@ -23,7 +23,7 @@ kPrv = data['Kraken']['TEST']['APIKey']
 Kraken = Kraken_Harness(apiPublicKey = kAPI, apiPrivateKey = kPrv)
 
 
-Hoard = Hoard(Eth_Harness = Eth_Ropsten, wallets = Wallets, Kraken_harness = Kraken)
+Hoard = Hoard(Eth_Harness = Eth_Ropsten, wallets = Wallets, Kraken = Kraken)
 Kraken = Hoard.Kraken_Harness
 web3 = Hoard.Eth_Harness.web3
 

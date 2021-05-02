@@ -17,7 +17,7 @@ class Wallet:
         address   : (string) string representing the public wallet address/key
         prvKey    : (string) string representing the private key of the wallet
     """
-    def ___init___(self,name="",currency="",address="",prvKey=""):
+    def __init__(self,name="",currency="",address="",prvKey=""):
         self.name = name
         self.currency = currency
         self.address = address

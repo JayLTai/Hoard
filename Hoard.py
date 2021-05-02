@@ -27,7 +27,7 @@ class Hoard:
 
     """
     def __init__(self, Eth_Harness = None, wallets = {}, Kraken = None):
-        self.Eth_Harness = Eth
+        self.Eth_Harness = Eth_Harness
         self.wallets = wallets
         self.Kraken_Harness = Kraken
     
