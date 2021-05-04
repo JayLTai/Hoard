@@ -11,28 +11,33 @@ import ssl
 import pdb
 
 class Kraken_Harness:
-    def __init__(self, apiPublicKey="", apiPrivateKey="", timeout=10):
-        self.apiPath = 'https://api.kraken.com'
-        self.apiPublicKey = apiPublicKey
-        self.apiPrivateKey = apiPrivateKey
+    def __init__(self, api_publickey="", api_privatekey="", timeout=10):
+        self.api_domain = 'https://api.kraken.com'
+        self.api_publickey = api_publickey
+        self.api_privatekey = api_privatekey
         self.timeout = timeout
         self.nonce = 0
 
  # signs a message
  # https://support.kraken.com/hc/en-us/articles/360022635592-Generate-authentication-strings-REST-API-\
  # https://support.kraken.com/hc/en-us/articles/360029054811-What-is-the-authentication-algorithm-for-private-endpoints-
-    def sign_message(self, endpoint, postData, nonce=""):
+    def sign_message(self, endpoint, post_data, nonce=""):
         
-        # apiPostData = "&nonce=" + nonce + postData
-        apiPostData = 'nonce=' + nonce + '&' + postData
+        api_postdata = post_data + '&nonce=' + nonce
+        api_postdata = api_postdata.encode('utf-8')
+        print(" post_data : " + str(post_data) + " ---------")
+        print(" post_data after encoding : " + str(api_postdata) + "---------")
 
         # Decode API private key from base64 format displayed in account management
-        api_secret = base64.b64decode(self.apiPrivateKey)
+        # api_secret = base64.b64decode(self.api_privatekey)
+        api_secret = self.get_apisecret()
 
         # Cryptographic hash algorithms
-        sha256_hash = hashlib.sha256(nonce.encode('utf-8') + apiPostData.encode('utf-8')).digest()
+        sha256_data = nonce.encode('utf-8') + api_postdata
+        sha256_hash = hashlib.sha256(sha256_data).digest()
 
-        hmac_sha256_data = endpoint.encode('utf-8') + sha256_hash
+        print("endpoint input : " + str(endpoint) + "---------")
+        hmac_sha256_data = endpoint.encode('utf-8') + endpoint.encode('utf-8') + sha256_hash
         hmac_sha256_hash = hmac.new(api_secret, hmac_sha256_data, hashlib.sha512)
         
         # Encode signature into base64 format used in API-Sign value
@@ -44,32 +49,44 @@ class Kraken_Harness:
 
     # creates a unique nonce
     def get_nonce(self):
-        # https://en.wikipedia.org/wiki/Modulo_operation
-        self.nonce = (self.nonce + 1) & 8191
-        return str(int(time.time() * 1000)) + str(self.nonce).zfill(4)
+        self.nonce = str(int(time.time()*1000))
+        return self.nonce
+
+    def get_apisecret(self):
+        return base64.b64decode(self.api_privatekey)
 
     # sends an HTTP request
-    def make_request(self, endpoint, postUrl=""):
+    def make_request(self, api_path, endpoint, post_data="",nonce=""):
         # create authentication headers
         # krakent requires the header to have an
         #   APIKey
         #   Nonce
         #   Authenticator
-
-        nonce = self.get_nonce()
-        signature = self.sign_message(endpoint, postUrl, nonce=nonce)
-        authentHeaders = {"API-Key": self.apiPublicKey,
-                            "nonce": nonce, "API-Sign": signature}
-
-        authentHeaders["User-Agent"] = "Kraken REST API"
+        if not nonce:
+            nonce = self.get_nonce()
+        signature = self.sign_message(endpoint, post_data, nonce=nonce)
+        api_postdata = post_data + '&nonce=' + nonce
+        api_postdata = api_postdata.encode('utf-8')
 
         # create request
-        if postUrl != "":
-            url = self.apiPath + endpoint + "?" + postUrl
-        else:
-            url = self.apiPath + endpoint
-        request = urllib2.Request(url, str.encode(postUrl), authentHeaders)
+        url = self.api_domain + api_path + endpoint
+        request = urllib2.Request(url, api_postdata)
+        request.add_header("API-Key", self.api_publickey)
+        request.add_header("API-Sign", signature)
+        request.add_header("User-Agent", "Kraken Rest API")
         response = urllib2.urlopen(request, timeout=self.timeout)
+        print("")
+        print("DEBUG DATA     : ")
+        print("api_url        : " + url)
+        print("api_endpoint   : " + endpoint)
+        print("api_parameters : " + post_data)
+        print("api_domain     : " + self.api_domain)
+        print("api_path       : " + api_path)
+        print("api_nonce      : " + nonce)
+        print("api_sig        : " + str(signature))
+        print("api_secret     : " + str(self.get_apisecret()))
+        print("")
+
 
         # return
         return response.read().decode("utf-8")
@@ -100,26 +117,26 @@ class Kraken_Harness:
         """
         return json.dumps(data)
 
-    def make_postURL(self,data):
+    def make_post_data(self,data):
         """
         process a dictionary of {parameter names : parameter data} in order to 
-        generate appropriate postURL data to add to the REST call 
+        generate appropriate post_data data to add to the REST call 
         Args:
-            data {parameter names : parameter data} : a dictionary representing the postURLs
+            data {parameter names : parameter data} : a dictionary representing the post_datas
                                                       parameter names and data
         Returns:
-            string representing the complete postURL to be added to the end of a REST call
+            string representing the complete post_data to be added to the end of a REST call
 
         """
-        postURL = ''
+        post_data = ''
         for key,item in data.items():
         #if the item is not an empty string
             if not not item:
-                if not postURL:
-                    postURL = '{k}={i}'.format(k=key, i=item)
+                if not post_data:
+                    post_data = '{k}={i}'.format(k=key, i=item)
                 else:
-                    postURL = postURL + '&{k}={i}'.format(k=key, i=item)
-        return postURL
+                    post_data = post_data + '&{k}={i}'.format(k=key, i=item)
+        return post_data
         
     ######################
     #    api functions   #
@@ -132,12 +149,14 @@ class Kraken_Harness:
 
 
     def get_servertime(self):
-        endpoint = '/0/public/Time'
-        return self.process_response(self.make_request(endpoint))
+        api_path = '/0/public/'
+        endpoint = 'Time'
+        return self.process_response(self.make_request(api_path, endpoint))
 
     def get_systemstatus(self):
-        endpoint = '/0/public/SystemStatus'
-        return self.process_response(self.make_request(endpoint))
+        api_path = '/0/public/'
+        endpoint = 'SystemStatus'
+        return self.process_response(self.make_request(api_path, endpoint))
 
     def get_assetinfo(self, info = "", aclass = "", asset = ""):
         """
@@ -145,10 +164,11 @@ class Kraken_Harness:
         aclass default = currency
         asset default = all for given asset class
         """
-        endpoint = '/0/public/Assets'
+        api_path = '/0/public/'
+        endpoint = 'Assets'
         data = dict(zip(['info','aclass','asset'],[info,aclass,asset]))
-        postURL = self.make_postURL(data)
-        return self.process_response(self.make_request(endpoint, postUrl = postURL))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
 
     def get_assetpairs(self,info = "", pair = ""):
         """
@@ -156,19 +176,21 @@ class Kraken_Harness:
         pair = comma delimited list of asset pairs to get info from (default = all)
                 ie: ETHUSD, BTCUSD
         """
-        endpoint = '/0/public/AssetPairs'
+        api_path = '/0/public/'
+        endpoint = 'AssetPairs'
         data = dict(zip(['info','pair'],[info,pair]))
-        postURL = self.make_postURL(data)
-        return self.process_response(self.make_request(endpoint, postUrl = postURL))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
 
     def get_tickerinfo(self,pair = ""):
         """
         pair = comma delimited list of asset pairs to get info from 
         """
-        endpoint = '/0/public/Ticker'
+        api_path = '/0/public/'
+        endpoint = 'Ticker'
         data = dict(zip(['pair'],[pair]))
-        postURL = self.make_postURL(data)
-        return self.process_response(self.make_request(endpoint, postUrl = postURL))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
 
     def get_ohlc(self,pair = "", interval = "", since = ""):
         """
@@ -177,10 +199,11 @@ class Kraken_Harness:
         interval (optional) = time frame interval in minutes 1 (default), 5, 15, 30, 60, 240, 1440, 10080, 21600
         since (optional.  exclusive) = return committed OHLC data since given id 
         """
-        endpoint = '/0/public/OHLC'
+        api_path = '/0/public/'
+        endpoint = 'OHLC'
         data = dict(zip(['pair','interval','since'],[pair,interval,since]))
-        postURL = self.make_postURL(data)
-        return self.process_response(self.make_request(endpoint, postUrl = postURL))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
 
     def get_orderbook(self,pair = "", count = ""):
         """
@@ -191,10 +214,11 @@ class Kraken_Harness:
             asks = ask side array of array entries(<price>, <volume>, <timestamp>)
             bids = bid side array of array entries(<price>, <volume>, <timestamp>)
         """
-        endpoint = '/0/public/Depth'
+        api_path = '/0/public/'
+        endpoint = 'Depth'
         data = dict(zip(['pair','count'],[pair,count]))
-        postURL = self.make_postURL(data)
-        return self.process_response(self.make_request(endpoint, postUrl = postURL))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
 
     def get_recenttrades(self,pair = "", since = ""):
         """
@@ -205,10 +229,11 @@ class Kraken_Harness:
             array of array entries(<price>, <volume>, <time>, <buy/sell>, <market/limit>, <miscellaneous>)
             last = id to be used as since when polling for new trade data
         """
-        endpoint = '/0/public/Trades'
+        api_path = '/0/public/'
+        endpoint = 'Trades'
         data = dict(zip(['pair','since'],[pair,since]))
-        postURL = self.make_postURL(data)
-        return self.process_response(self.make_request(endpoint, postUrl = postURL))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
 
     def get_recentspread(self,pair = "", since = ""):
         """
@@ -219,10 +244,11 @@ class Kraken_Harness:
             array of array entries(<time>, <bid>, <ask>)
             last = id to be used as since when polling for new spread data
         """
-        endpoint = '/0/public/Spread'
+        api_path = '/0/public/'
+        endpoint = 'Spread'
         data = dict(zip(['pair','since'],[pair,since]))
-        postURL = self.make_postURL(data)
-        return self.process_response(self.make_request(endpoint, postUrl = postURL))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
 
 
     ############# PRIVATE FUNCTIONS ##############
@@ -232,8 +258,9 @@ class Kraken_Harness:
         Returns:
             array of asset names and balance amount
         """
-        endpoint = '/0/private/Balance'
-        return self.make_request(endpoint)
+        api_path = '/0/private/'
+        endpoint = 'Balance'
+        return self.make_request(api_path, endpoint)
         # return self.process_response(self.make_request(endpoint))
 
     def get_tradebalance(self,aclass = "", asset = ""):
@@ -252,7 +279,8 @@ class Kraken_Harness:
             mf = free margin = equity - initial margin (maximum margin available to open new positions)
             ml = margin level = (equity / initial margin) * 100
         """
-        endpoint = '/0/private/TradeBalance'
+        api_path = '/0/private/'
+        endpoint = 'TradeBalance'
         data = dict(zip(['aclass','asset'],[aclass,asset]))
-        postURL = self.make_postURL(data)
-        return self.process_response(self.make_request(endpoint, postUrl = postURL))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))

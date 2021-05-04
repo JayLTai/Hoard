@@ -19,8 +19,8 @@ for k,p in w.items():
         Wallets[k].json_import(param,val)
 
 kAPI = data['Kraken']['TEST']['APIKey']
-kPrv = data['Kraken']['TEST']['APIKey']
-Kraken = Kraken_Harness(apiPublicKey = kAPI, apiPrivateKey = kPrv)
+kPrv = data['Kraken']['TEST']['PrivateKey']
+Kraken = Kraken_Harness(api_publickey = kAPI, api_privatekey = kPrv)
 
 
 Hoard = Hoard(Eth_Harness = Eth_Ropsten, wallets = Wallets, Kraken = Kraken)
