@@ -1,5 +1,3 @@
-# reference : https://github.com/CryptoFacilities/REST-v3-Python/blob/master/cfRestApiV3.py
-
 import time
 import base64
 import hashlib
@@ -85,8 +83,8 @@ class Kraken_Harness:
             a dictionary with the relevant data pulled from the response
         """
         response = json.loads(response)
-        if not response['error']: 
-            result = response['result'] 
+        if not response['error'] and response: 
+                result = response['result'] 
         else:
             raise RuntimeError('Got REST call error : {}'.format(response['error']))
         return result
@@ -126,7 +124,7 @@ class Kraken_Harness:
     #    api functions   #
     ######################
 
-    #for more information visit: https://www.kraken.com/en-us/features/api
+    #for more information visit: https://docs.kraken.com/rest/#tag/Market-Data
     #all functions here can be found in the link above with corresponding REST docs
     # api_private_get = {"accounts", "openorders", "fills", "openpositions", "transfers", "notifications", "historicorders", "recentorders"}
     # api_private_post = {"transfer", "sendorder", "cancelorder", "cancelallorders", "cancelallordersafter", "batchorder", "withdrawal"}
@@ -245,12 +243,10 @@ class Kraken_Harness:
         api_path = '/0/private/'
         endpoint = 'Balance'
         return self.process_response(self.make_request(api_path, endpoint))
-        # return self.make_request(api_path, endpoint)
 
-    def get_tradebalance(self,aclass = "", asset = ""):
+    def get_tradebalance(self,asset = ""):
+        #getting internal error from this, not sure why yet, email support
         """
-        aclass = asset class (optional):
-            currency (default)
         asset = base asset used to determine balance (default = ZUSD)
         Returns: array of trade balance info
             eb = equivalent balance (combined balance of all currencies)
@@ -265,7 +261,12 @@ class Kraken_Harness:
         """
         api_path = '/0/private/'
         endpoint = 'TradeBalance'
-        data = dict(zip(['aclass','asset'],[aclass,asset]))
+        data = dict(zip(['asset'],[asset]))
         post_data = self.make_post_data(data)
         print(post_data)
         return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
+
+    def get_tradeshistory(self, type = ""):
+            api_path = '/0/private/'
+            endpoint = 'TradesHistory'
+            return self.process_response(self.make_request(api_path, endpoint, post_data=""))
