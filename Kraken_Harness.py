@@ -21,12 +21,7 @@ class Kraken_Harness:
  # signs a message
  # https://support.kraken.com/hc/en-us/articles/360022635592-Generate-authentication-strings-REST-API-\
  # https://support.kraken.com/hc/en-us/articles/360029054811-What-is-the-authentication-algorithm-for-private-endpoints-
-    def sign_message(self, endpoint, post_data, nonce=""):
-        
-        api_postdata = post_data + '&nonce=' + nonce
-        api_postdata = api_postdata.encode('utf-8')
-        print(" post_data : " + str(post_data) + " ---------")
-        print(" post_data after encoding : " + str(api_postdata) + "---------")
+    def sign_message(self, endpoint, api_postdata, api_path, nonce=""):
 
         # Decode API private key from base64 format displayed in account management
         # api_secret = base64.b64decode(self.api_privatekey)
@@ -37,13 +32,12 @@ class Kraken_Harness:
         sha256_hash = hashlib.sha256(sha256_data).digest()
 
         print("endpoint input : " + str(endpoint) + "---------")
-        hmac_sha256_data = endpoint.encode('utf-8') + endpoint.encode('utf-8') + sha256_hash
+        hmac_sha256_data = api_path.encode('utf-8') + endpoint.encode('utf-8') + sha256_hash
         hmac_sha256_hash = hmac.new(api_secret, hmac_sha256_data, hashlib.sha512)
         
         # Encode signature into base64 format used in API-Sign value
         api_signature = base64.b64encode(hmac_sha256_hash.digest())
-        # pdb.set_trace()
-        
+   
         # API authentication signature for use in API-Sign HTTP header
         return api_signature
 
@@ -62,11 +56,14 @@ class Kraken_Harness:
         #   APIKey
         #   Nonce
         #   Authenticator
+
         if not nonce:
             nonce = self.get_nonce()
-        signature = self.sign_message(endpoint, post_data, nonce=nonce)
+
         api_postdata = post_data + '&nonce=' + nonce
         api_postdata = api_postdata.encode('utf-8')
+
+        signature = self.sign_message(endpoint = endpoint, api_postdata = api_postdata, api_path = api_path, nonce=nonce)
 
         # create request
         url = self.api_domain + api_path + endpoint
@@ -75,20 +72,7 @@ class Kraken_Harness:
         request.add_header("API-Sign", signature)
         request.add_header("User-Agent", "Kraken Rest API")
         response = urllib2.urlopen(request, timeout=self.timeout)
-        print("")
-        print("DEBUG DATA     : ")
-        print("api_url        : " + url)
-        print("api_endpoint   : " + endpoint)
-        print("api_parameters : " + post_data)
-        print("api_domain     : " + self.api_domain)
-        print("api_path       : " + api_path)
-        print("api_nonce      : " + nonce)
-        print("api_sig        : " + str(signature))
-        print("api_secret     : " + str(self.get_apisecret()))
-        print("")
 
-
-        # return
         return response.read().decode("utf-8")
 
     
@@ -101,8 +85,8 @@ class Kraken_Harness:
             a dictionary with the relevant data pulled from the response
         """
         response = json.loads(response)
-        if not response['error']:
-           result = response['result'] 
+        if not response['error']: 
+            result = response['result'] 
         else:
             raise RuntimeError('Got REST call error : {}'.format(response['error']))
         return result
@@ -260,8 +244,8 @@ class Kraken_Harness:
         """
         api_path = '/0/private/'
         endpoint = 'Balance'
-        return self.make_request(api_path, endpoint)
-        # return self.process_response(self.make_request(endpoint))
+        return self.process_response(self.make_request(api_path, endpoint))
+        # return self.make_request(api_path, endpoint)
 
     def get_tradebalance(self,aclass = "", asset = ""):
         """
@@ -283,4 +267,5 @@ class Kraken_Harness:
         endpoint = 'TradeBalance'
         data = dict(zip(['aclass','asset'],[aclass,asset]))
         post_data = self.make_post_data(data)
+        print(post_data)
         return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
