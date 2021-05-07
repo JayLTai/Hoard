@@ -133,3 +133,4 @@ dmypy.json
 keys.json
 kraken_CLI.py
 kraken_example.py
+delete.py
