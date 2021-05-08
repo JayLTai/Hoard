@@ -83,8 +83,13 @@ class Kraken_Harness:
             a dictionary with the relevant data pulled from the response
         """
         response = json.loads(response)
-        if not response['error'] and response: 
-                result = response['result'] 
+        if not response['error'] and response:
+            try:
+                result = response['result']
+            except KeyError:
+                print(" +++++++ response from server received.......empty result............. +++++++")
+                print(" +++++++ did you call get account balance on an account wihtout money? +++++++")
+                return ""
         else:
             raise RuntimeError('Got REST call error : {}'.format(response['error']))
         return result
