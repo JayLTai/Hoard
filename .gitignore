@@ -129,6 +129,9 @@ dmypy.json
 .pyre/
 .vscode/settings.json
 
+#pycharm
+.idea
+
 # Security and examples
 keys.json
 kraken_CLI.py
