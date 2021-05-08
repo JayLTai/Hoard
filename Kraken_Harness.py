@@ -29,7 +29,6 @@ class Kraken_Harness:
         sha256_data = nonce.encode('utf-8') + api_postdata
         sha256_hash = hashlib.sha256(sha256_data).digest()
 
-        print("endpoint input : " + str(endpoint) + "---------")
         hmac_sha256_data = api_path.encode('utf-8') + endpoint.encode('utf-8') + sha256_hash
         hmac_sha256_hash = hmac.new(api_secret, hmac_sha256_data, hashlib.sha512)
         
@@ -91,7 +90,7 @@ class Kraken_Harness:
                 print(" +++++++ did you call get account balance on an account wihtout money? +++++++")
                 return ""
         else:
-            raise RuntimeError('Got REST call error : {}'.format(response['error']))
+            raise RuntimeError('Got Error response from Kraken REST response : {}'.format(response['error']))
         return result
 
     def build_data(self,data):
@@ -129,11 +128,12 @@ class Kraken_Harness:
     #    api functions   #
     ######################
 
-    #for more information visit: https://docs.kraken.com/rest/#tag/Market-Data
+    #for more information visit: https://docs.kraken.com/rest/
     #all functions here can be found in the link above with corresponding REST docs
     # api_private_get = {"accounts", "openorders", "fills", "openpositions", "transfers", "notifications", "historicorders", "recentorders"}
     # api_private_post = {"transfer", "sendorder", "cancelorder", "cancelallorders", "cancelallordersafter", "batchorder", "withdrawal"}
 
+    ########## PUBLIC FUNCTIONS ##########
 
     def get_servertime(self):
         api_path = '/0/public/'
@@ -238,7 +238,7 @@ class Kraken_Harness:
         return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
 
 
-    ############# PRIVATE FUNCTIONS ##############
+    ############# PRIVATE USER DATA FUNCTIONS ##############
 
     def get_accountbalance(self):
         """
@@ -268,10 +268,138 @@ class Kraken_Harness:
         endpoint = 'TradeBalance'
         data = dict(zip(['asset'],[asset]))
         post_data = self.make_post_data(data)
-        print(post_data)
         return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
 
     def get_tradeshistory(self, type = ""):
             api_path = '/0/private/'
             endpoint = 'TradesHistory'
             return self.process_response(self.make_request(api_path, endpoint, post_data=""))
+
+
+    ############# PRIVATE USER FUNDING AND TRADING FUNCTIONS ##############
+
+    def add_order(self,  ordertype, type, pair, userref = "", volume = "",
+                  price = "", price2 = "", leverage = "", oflags = "", starttm = "",
+                  expiretm = "", close_ordertype = "", close_price = "", close_price2 = "",
+                  trading_agreement = "", validate = False):
+        """
+        Args:
+            userref: (string) user reference ID
+                    Optional user specified integer id that can be used to assosciated with
+                    any number of orders
+            ordertype: (string) REQUIRED - Order Type
+                    Enum: "market" "limit" - "stop-loss" - "take-profit" - "stop-loss-limit"
+                    "take-profit-limit" - "settle-position"
+            type: (string) REQUIRED - order direction : buy or sell
+                    Enum: "buy" - "sell"
+            volume: (string) - order quantity in terms of the base asset
+                    Note: Volume can be specified as 0 for closing margin orders to automatically
+                    fill the requisite quantity.
+            pair: (string) REQUIRED -  Asset pair ID or altname
+            price: (string) - Price
+                    Limit price for - limit - orders
+                    trigger price for - stop-loss, stop-loss-limit, take-profit, take-profit-limit - orders
+            price2: (string) - Secondary price
+                    Limit price for - stop-loss-limit, take-profit-limit - orders
+                    Note: Either price or price2 can be preceded by +, -, or # to specify the order price as
+                    an offset relative to the last traded price.
+                    + adds the amount
+                    - subtracts the amount
+                    # will either add or subtract the amount to the last traded price, depending on direction and order type used.
+                    Relative prices can be suffixed with a % to signify the relative amount as a percentage.
+            leverage: (string) amount of leverage desired
+                    default = none
+            oflags: (string) comma delimited list of order flags
+                    "post" post-only order (available when ordertype = limit)
+                    "fcib" prefer fee in base currency (default if selling)
+                    "fciq" prefer fee in quote currency (default if buying, mutually exclusive with fcib)
+                    "nompp" disable market price protection for market orders
+            starttm: (string) scheduled start time of order can be specified as a specific time stamp or number of seconds in future
+                    "0" now (default)
+                    "+<n>" schedule start time seconds from now
+                    "<n>" = unix timestamp of start time
+            expiretm: (string) order expiration time, follows same rules as starttm
+                    "0" no expiration (default)
+                    "+<n>" = expire seconds from now, minimum 5 seconds
+                    "<n>" = unix timestamp of expiration time
+            closeordertype: (string) conditional close order type see: https://support.kraken.com/hc/en-us/articles/360038640052-Conditional-Close
+                    Enum: "limit" "stop-loss" "take-profit" "stop-loss-limit" "take-profit-limit"
+            close_price: (string) conditional close order price - Same as price
+            close_price2: (string) conditional close order price2  - Same as price2
+            trading_agreement: (string) Value is "agree" - Required in Germany ?????
+                    https://support.kraken.com/hc/en-us/articles/360000920026--Trading-agreement-required-error-for-German-residents
+            validate: (boolean)
+                    true - submit order
+                    false - (DEFAULT) do not submit order, just validate parameters
+        Returns:
+            descr : description
+                order : order execution description
+                close : order close description
+            txid : transaction id
+        """
+        api_path = '/0/private/'
+        endpoint = 'AddOrder'
+        data = dict(zip(['userref', 'ordertype','type','volume','pair','pair',
+                         'price','price2','leverage','oflags','starttm','expiretm',
+                         'close[ordertype]','close[price]','close[price2]',
+                         'trading_agreement','validate'],
+                        [userref, ordertype, type, volume, pair, price, price2,
+                         leverage, oflags, starttm, expiretm, close_ordertype,
+                         close_price, close_price2, trading_agreement, validate]))
+        post_data = self.make_post_data(data)
+        # return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
+        return self.make_request(api_path, endpoint, post_data = post_data)
+
+    def cancel_order(self, txid):
+        """
+
+        Args:
+            txid: (string or integer) REQUIRED - Open order transaction ID (txid) or user reference (userref)
+
+        Returns:
+            count: number of orders canceled(?)
+        """
+        api_path = '/0/private/'
+        endpoint = 'CancelOrder'
+        data = dict(zip(['txid'],[txid]))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
+
+    def cancle_allorders(self):
+        """
+
+        Returns:
+            count: number of orders canceled(?)
+        """
+        api_path = '/0/private/'
+        endpoint = 'CancelAll'
+        return self.process_response(self.make_request(api_path, endpoint))
+
+    def cancel_allordersafter(self, timeout):
+        """
+        CancelAllOrdersAfter provides a "Dead Man's Switch" mechanism to protect the client
+        from network malfunction, extreme latency or unexpected matching engine downtime.
+        The client can send a request with a timeout (in seconds), that will start a countdown
+        timer which will cancel all client orders when the timer expires. The client has to keep
+        sending new requests to push back the trigger time, or deactivate the mechanism by
+        specifying a timeout of 0. If the timer expires, all orders are cancelled and then the
+        timer remains disabled until the client provides a new (non-zero) timeout.
+
+        The recommended use is to make a call every 15 to 30 seconds,
+        providing a timeout of 60 seconds. This allows the client to keep the orders in place
+        in case of a brief disconnection or transient delay, while keeping them safe in case of
+        a network breakdown. It is also recommended to disable the timer ahead of regularly
+        scheduled trading engine maintenance (if the timer is enabled, all orders will be
+        cancelled when the trading engine comes back from downtime - planned or otherwise).
+        Args:
+            timeout: (int) REQUIRED - Duration (in seconds) to set/extend the timer by
+
+        Returns:
+            currenttime : time of response sent
+            triggertime : time of trigger of cancel
+        """
+        api_path = '/0/private/'
+        endpoint = 'CancelAllOrdersAfter'
+        data = dict(zip(['timeout']),[timeout])
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
