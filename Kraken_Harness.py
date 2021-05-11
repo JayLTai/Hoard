@@ -420,7 +420,7 @@ class Kraken_Harness:
         post_data = self.make_post_data(data)
         return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
 
-    def get_depositaddress(self, asset, method, new = true):
+    def get_depositaddress(self, asset, method, new = True):
         """
         Args:
             asset: (string) REQUIRED - asset being deposited
