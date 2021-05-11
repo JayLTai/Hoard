@@ -403,3 +403,158 @@ class Kraken_Harness:
         data = dict(zip(['timeout']),[timeout])
         post_data = self.make_post_data(data)
         return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
+
+    def get_depositmethods(self, asset):
+        """
+        Args:
+            asset: (string) REQUIRED - asset being deposited
+        Returns:
+            method:
+            limit:
+            fee:
+            gen-address
+        """
+        api_path = '/0/private/'
+        endpoint = 'DepositMethods'
+        data = dict(zip(['asset']), [asset])
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+
+    def get_depositaddress(self, asset, method, new = true):
+        """
+        Args:
+            asset: (string) REQUIRED - asset being deposited
+            method: (string) REQUIRED - name of the deposit method
+            new: (bool) wether or not to generate a new address
+        Returns:
+            address:
+            expiretm:
+            new:
+        """
+        api_path = '/0/private/'
+        endpoint = 'DepositAddresses'
+        data = dict(zip(['asset','method','new']), [asset,method,new])
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+
+    def get_depositstatus(self, asset, method = ""):
+        """
+        Gets status and information of most recent deposit of given asset
+        Args:
+            asset: (string) REQUIRED - asset being deposited
+            method: (string) name of the deposit method
+        Returns:
+            method:
+            aclass:
+            asset:
+            refid:
+            txid:
+            info:
+            amount:
+            fee:
+            time:
+            status:
+        """
+        api_path = '/0/private/'
+        endpoint = 'DepositMethods'
+        data = dict(zip(['asset','method']), [asset,method])
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+
+    def get_withdrawalinfo(self, asset, key, amount):
+        """
+        Retrieve fee information about potential withdrawals for a particular asset, key and amount.
+        Args:
+            asset: (string) asset being withdrawn
+            key: (string) withdrawal key name, as set up on your account
+            amount: (string) amount to be withdrawn
+
+        Returns:
+            method:
+            limit:
+            amount:
+            fee:
+        """
+        api_path = '/0/private/'
+        endpoint = 'WithdrawInfo'
+        data = dict(zip(['asset','key','amount'],[asset,key,amount]))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+
+    def withdraw_funds(self, asset, key, amount):
+        """
+        Retrieve fee information about potential withdrawals for a particular asset, key and amount.
+        Args:
+            asset: (string) asset being withdrawn
+            key: (string) withdrawal key name, as set up on your account
+            amount: (string) amount to be withdrawn
+
+        Returns:
+            refid:
+        """
+        api_path = '/0/private/'
+        endpoint = 'Withdraw'
+        data = dict(zip(['asset','key','amount'],[asset,key,amount]))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+
+    def get_withdrawstatus(self, asset, method):
+        """
+        Retrieve fee information about potential withdrawals for a particular asset, key and amount.
+        Args:
+            asset: (string) asset being withdrawn
+            method: (string) name of withdrawal method
+
+        Returns:
+            method:
+            aclass:
+            asset:
+            refid:
+            txid:
+            info:
+            amount:
+            fee:
+            time:
+            status:
+            status-prop:
+        """
+        api_path = '/0/private/'
+        endpoint = 'WithdrawStatus'
+        data = dict(zip(['asset','method'],[asset,method]))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+
+    def cancel_withdraw(self, asset, refid):
+        """
+        Retrieve fee information about potential withdrawals for a particular asset, key and amount.
+        Args:
+            asset: (string) asset being withdrawn
+            refid: (string) withdrawal reference ID
+
+        Returns:
+            result:
+        """
+        api_path = '/0/private/'
+        endpoint = 'WithdrawlCancel'
+        data = dict(zip(['asset', 'refid'], [asset, refid]))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+
+    def request_wallet_transfer(self, asset, amount, frm = "Spot Wallet", to = "Futures Wallet"):
+        """
+        Transfer from Kraken spot wallet to Kraken Futures holding wallet. Note that a transfer in the other direction
+        must be requested via the Kraken Futures API endpoint.
+        Args:
+            asset: (string) REQUIRED - Asset to transfer (asset ID or altname)
+            frm: (string) REQUIRED - value : "Spot Wallet"
+            to: (string) REQUIRED - value : "Futures Wallet"
+            amount: (string) REQUIRED - amount to transfer
+
+        Returns:
+            refid:
+        """
+        api_path = '/0/private/'
+        endpoint = 'WalletTransfer'
+        data = dict(zip(['asset', 'from', 'to', 'amount'], [asset, frm, to, amount]))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))

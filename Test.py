@@ -118,4 +118,4 @@ print("_____________________________________________________")
 print("_________________     Add Order    __________________")
 print("_____________________________________________________")
 print(Kraken.add_order(ordertype = "limit", type = "buy", volume = "1.25",
-                       pair = "BTCEUR", price = "275", validate = True))
+                       pair = "XETHZUSD", price = "275", validate = True))
