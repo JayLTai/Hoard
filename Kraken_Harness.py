@@ -416,7 +416,7 @@ class Kraken_Harness:
         """
         api_path = '/0/private/'
         endpoint = 'DepositMethods'
-        data = dict(zip(['asset']), [asset])
+        data = dict(zip(['asset'], [asset]))
         post_data = self.make_post_data(data)
         return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
 
@@ -456,8 +456,8 @@ class Kraken_Harness:
             status:
         """
         api_path = '/0/private/'
-        endpoint = 'DepositMethods'
-        data = dict(zip(['asset','method']), [asset,method])
+        endpoint = 'DepositStatus'
+        data = dict(zip(['asset','method'], [asset,method]))
         post_data = self.make_post_data(data)
         return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
 
@@ -479,15 +479,16 @@ class Kraken_Harness:
         endpoint = 'WithdrawInfo'
         data = dict(zip(['asset','key','amount'],[asset,key,amount]))
         post_data = self.make_post_data(data)
-        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+        # return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+        return self.make_request(api_path, endpoint, post_data = post_data)
 
     def withdraw_funds(self, asset, key, amount):
         """
         Retrieve fee information about potential withdrawals for a particular asset, key and amount.
         Args:
-            asset: (string) asset being withdrawn
-            key: (string) withdrawal key name, as set up on your account
-            amount: (string) amount to be withdrawn
+            asset: (string) REQUIRED - asset being withdrawn
+            key: (string) REQUIRED - withdrawal key name, as set up on your account
+            amount: (string) REQUIRED - amount to be withdrawn
 
         Returns:
             refid:
@@ -498,11 +499,11 @@ class Kraken_Harness:
         post_data = self.make_post_data(data)
         return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
 
-    def get_withdrawstatus(self, asset, method):
+    def get_withdrawstatus(self, asset, method = ""):
         """
         Retrieve fee information about potential withdrawals for a particular asset, key and amount.
         Args:
-            asset: (string) asset being withdrawn
+            asset: (string) REQUIRED - asset being withdrawn
             method: (string) name of withdrawal method
 
         Returns:
@@ -528,8 +529,8 @@ class Kraken_Harness:
         """
         Retrieve fee information about potential withdrawals for a particular asset, key and amount.
         Args:
-            asset: (string) asset being withdrawn
-            refid: (string) withdrawal reference ID
+            asset: (string) REQUIRED - asset being withdrawn
+            refid: (string) REQUIRED - withdrawal reference ID
 
         Returns:
             result:
