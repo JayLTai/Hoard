@@ -116,7 +116,7 @@ class Kraken_Harness:
         """
         post_data = ''
         for key,item in data.items():
-        #if the item is not an empty string
+        #if the item is not an empty string then add it to the post_data
             if not not item:
                 if not post_data:
                     post_data = '{k}={i}'.format(k=key, i=item)
@@ -270,11 +270,206 @@ class Kraken_Harness:
         post_data = self.make_post_data(data)
         return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
 
-    def get_tradeshistory(self, type = ""):
-            api_path = '/0/private/'
-            endpoint = 'TradesHistory'
-            return self.process_response(self.make_request(api_path, endpoint, post_data=""))
+    def get_openorders(self, trades = False, userref = ""):
+        """
+        Retrieve information about currently open orders.
+        Args:
+            trades: (bool) default = False
+                whether or not to include trades relevant to position in output
+            userref: (int) restrict results to given user reference id
 
+        Returns:
+            open : {
+                ordertxid (string) : {
+                    userref:(int)
+                    status:
+                    opentm:(int)
+                    starttm:(int)
+                    expiretm:(int)
+                    descr: {
+                        pair:
+                        type:
+                        ordertype:
+                        price:
+                        price2:
+                        leverage:
+                        order:
+                        close:
+                        }
+                    vol:
+                    vol_exec:
+                    cost:
+                    fee:
+                    price:
+                    stopprice:
+                    limitprice:
+                    misc:
+                    oflags:
+                    trades: [trade IDs (string)]
+                }
+        """
+        api_path = '/0/private/'
+        endpoint = 'OpenOrders'
+        data = dict(zip(['trades','userref'],[trades, userref]))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
+
+    def get_closedorders(self, trades = False, userref = "", start = "", end = "", ofs = "", closetime = "both"):
+        """
+        Retrieve information about orders that have been closed (filled or cancelled). 50 results are
+        returned at a time, the most recent by default.
+        Note: If an order's tx ID is given for start or end time, the order's opening time (opentm) is used
+        Args:
+            trades: (bool) default = False
+                Whether or not to include trades related to position in output
+            userref: (int) Restricts results to given user reference id
+            start: (int) Starting unix timestamp or order tx ID of results (exclusive)
+            end: (int) Ending unix timestamp or order tx ID of results (inclusive)
+            ofs: (int) Result offset for pagination
+            closetime: (string) default = "both"
+                "open"
+                "close"
+                "both"
+
+        Returns:
+            closed : {
+                    ordertxid (string) : {
+                        refid:
+                        userref: (int)
+                        status:
+                        reason:
+                        opentm: (int)
+                        closetm: (int)
+                        starttm: (int)
+                        expiretm: (int)
+                        descr: {
+                            pair:
+                            type:
+                            ordertype:
+                            price:
+                            price2:
+                            leverage:
+                            order:
+                            close:
+                            }
+                        vol:
+                        vol_exec:
+                        cost:
+                        fee:
+                        price:
+                        stopprice:
+                        limitprice:
+                        misc:
+                        oflags:
+                        trades: [trade IDs (string)]
+                    }
+        """
+        api_path = '/0/private/'
+        endpoint = 'ClosedOrders'
+        data = dict(zip(['trades','userref','start','end','ofs','closetime'],[trades, userref, start, end, ofs, closetime]))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
+
+    def get_orderinfo(self, txid, trades = False, userref = ""):
+        """
+        Retrieve information about specific orders.
+        Args:
+            txid: (string) REQUIRED - Comma delimited list of transaction IDs to query info about (20 maximum)
+            trades: (bool) default = False
+                Whether or not to include trades related to position in output
+            userref: (int) Restrict results to given user reference id
+
+        Returns:
+                ordertxid (string) : {
+                    refid:
+                    userref: (int)
+                    status:
+                    reason:
+                    opentm: (int)
+                    closetm: (int)
+                    starttm: (int)
+                    expiretm: (int)
+                    descr: {
+                        pair:
+                        type:
+                        ordertype:
+                        price:
+                        price2:
+                        leverage:
+                        order:
+                        close:
+                        }
+                    vol:
+                    vol_exec:
+                    cost:
+                    fee:
+                    price:
+                    stopprice:
+                    limitprice:
+                    misc:
+                    oflags:
+                    trades: [trade IDs (string)]
+                }
+        """
+        api_path = '/0/private/'
+        endpoint = 'QueryOrders'
+        data = dict(zip(['txid','trades','userref'],[txid, trades, userref]))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
+
+    def get_tradeshistory(self, type = "", trades = False, start = "", end = "", ofs = ""):
+        """
+        Retrieve information about trades/fills. 50 results are returned at a time, the most recent by default.
+        Unless otherwise stated, costs, fees, prices, and volumes are specified with the precision for the asset pair
+        (pair_decimals and lot_decimals), not the individual assets' precision (decimals).
+
+        Args:
+            type: (string) default -> "all"
+                "all"
+                "any position"
+                "closed position"
+                "closing position"
+                "no position"
+            trades: (bool) default -> False
+                Whether or not to include trades related to position in output
+            start: (int) Starting unix timestamp or trade tx ID of results (exclusive)
+            end: (int) Ending unix timestamp or trade tx ID of results (inclusive)
+            ofs:(int) Result offset for pagination
+
+        Returns:
+            trades:{
+                ordertxid:
+                posttxid:
+                pair:
+                time: (int)
+                type:
+                ordertype:
+                price:
+                cost:
+                fee:
+                vol:
+                margin:
+                misc:
+        """
+        api_path = '/0/private/'
+        endpoint = 'TradesHistory'
+        data = dict(zip(['type','trades','start','end','ofs'],[type, trades, start, end, ofs]))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+
+    def get_tradesinfo(self, txid = "", trades = False):
+        """
+        Retrieve information about specific trades/fills.
+        Args:
+            txid: (string) Comma delimited list of transaction IDs to query info about (20 maximum)
+            trades: (bool) default = False
+                Whether or not to include trades related to position in output
+
+        Returns:
+            txid (string) :
+                ordertxid :
+
+        """
 
     ############# PRIVATE USER FUNDING AND TRADING FUNCTIONS ##############
 
