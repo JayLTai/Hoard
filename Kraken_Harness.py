@@ -116,7 +116,7 @@ class Kraken_Harness:
         """
         post_data = ''
         for key,item in data.items():
-        #if the item is not an empty string then add it to the post_data
+        #if the item is not an empty string then add it to the post_datwa
             if not not item:
                 if not post_data:
                     post_data = '{k}={i}'.format(k=key, i=item)
@@ -468,8 +468,263 @@ class Kraken_Harness:
         Returns:
             txid (string) :
                 ordertxid :
+                postxid :
+                pair :
+                time : (int)
+                type :
+                ordertype :
+                price :
+                cost :
+                fee :
+                vol :
+                margin :
+                misc :
+        """
+        api_path = '/0/private/'
+        endpoint = 'QueryTrades'
+        data = dict(zip(['txid','trades'],[txid, trades]))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path,endpoint,post_data = post_data))
+
+    def get_openpositions(self, txid = "", docalcs = False, consolidation = "market"):
+        """
+        Get information about open margin position
+        Args:
+            txid : (string) Comma delimited list of txids to limit output to
+            docalcs : (bool) whether to include P&L calculations
+            consolidation : (string) value = "market"
+                            Consolidate positions by market/pair
+
+        Returns:
+         txid (string) :
+                ordertxid :
+                postxid :
+                pair :
+                time : (int)
+                type :
+                ordertype :
+                cost :
+                fee :
+                vol :
+                vol_close :
+                margin :
+                value :
+                net :
+                terms :
+                rollovertm :
+                misc :
+                oflags :
 
         """
+        api_path = '/0/private/'
+        endpoint = 'OpenPositions'
+        data = dict(zip(['txid','docalcs','consoldiation'],[txid, docalcs, consolidation]))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
+
+    def get_ledgerspread(self, asset = "", aclass = "", type = "all", start = "", end = "", ofs = ""):
+        """
+        Retrieve information about ledger entries.
+        50 results are returned at a time, the most recent by default
+        Args:
+            asset: (string) Comma delimited list of assets to restrict output to
+            aclass: (string) asset class
+            type: (string) default = "all"
+                    Type of ledger to retrieve
+                    "all"
+                    "deposit"
+                    "withdrawal"
+                    "trade"
+                    "margin"
+            start: (int) Starting unix timestamp or ledger ID of results (exclusive)
+            end: (int) Ending unix timestamp or ledger ID of results (inclusive)
+            ofs: (int) result offset for pagination
+
+        Returns:
+            ledger : {
+                txid (string) : {
+                    refid :
+                    time : (int)
+                    type :
+                    subtype :
+                    aclass :
+                    asset :
+                    amount :
+                    fee :
+                    balance :
+                }
+            }
+
+        """
+        api_path = '/0/private/'
+        endpoint = 'Ledgers'
+        data = dict(zip(['asset','aclass','type','start','end','ofs'],[asset, aclass, type, start, end, ofs]))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
+
+    def get_ledgerinfo(self, id = "", trades = False):
+        """
+        Retrieve information about specific ledger entries
+        Args:
+            id: (string) comma delimited list of ledger IDs to query info about (20 max)
+            trades: (bool) default = False
+                    whether or not to include trades related to position in output
+
+        Returns:
+            txid (string) : {
+                refid :
+                time : (int)
+                trype :
+                subtype :
+                aclass :
+                asset :
+                amount :
+                fee :
+                balance:
+
+        """
+        api_path = '/0/private/'
+        endpoint = 'QueryLedgers'
+        data = dict(zip(['id','trades'],[id, trades]))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
+
+    def get_tradevolume(self, pair, fee_info = True):
+        """
+        get the trade volume of a given pair
+        Note: If an asset pair is on a maker/taker fee schedule, the taker side is given in fees and maker
+        side in fees_maker.
+        For pairs not on maker/taker, they will only be given in fees
+        Args:
+            pair: (string) REQUIRED - asset pair to get data from
+                    (I think this can also be a comma delimited list?? )
+            fee_info: (bool) whether or not to inlcude fee info in results
+
+        Returns:
+            currency :
+            volume :
+            fees : {
+                pair name (string) : {
+                    fee :
+                    minfee :
+                    maxfee :
+                    nextfee : (can be null)
+                    nextvolume : (can be null)
+                    tiervolume :
+                }
+            }
+            fees_maker : {
+                pair name (string) : {
+                    fee :
+                    minfee :
+                    maxfee :
+                    nextfee : (can be null)
+                    nextvolume : (can be null)
+                    tiervolume :
+                }
+            }
+        """
+        api_path = '/0/private/'
+        endpoint = 'TradeVolume'
+        data = dict(zip(['pair','fee-info'],[[pair,fee_info]]))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
+
+    def request_report(self, report, description, format = "CSV", fields = "all", starttm = "", endtm = ""):
+        """
+        Request an export of trades or ledgers
+        Args:
+            report: (string) REQUIRED - type of data to export :
+                    "trades"
+                    "ledgers"
+            description: (string) REQUIRED - description for the export
+            format: (string) file format for export :
+                    "CSV" - default
+                    "TSV"
+            fields: (string) comma delimited list of fields to include
+                    "all" - default
+                    trades : "ordertxid, time, oredertype, price, cost, fee, vol, margin, misc, ledgers"
+                    ledgers : "refid, time, aclass, asset, amount, fee, balance"
+            starttm: (int) UNIX timestamp for report start time (default 1 year ago)
+            endtm: (int) UNIX timestamp for report end time
+
+        Returns:
+            id:
+        """
+        api_path = '/0/private/'
+        endpoint = 'AddExport'
+        data = dict(zip(['report','format','description','fields','starttm','endtm'],[report, format, description, fields, starttm, endtm]))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
+
+    def get_reportstatus(self, report):
+        """
+        Get status of requested data exports
+        Args:
+            report: (string) REQUIRED - type of reports to inquire about
+                    "trades"
+                    "ledgers"
+
+        Returns:
+            {
+                id :
+                descr  :
+                format :
+                report :
+                subtype :
+                status :
+                flags :
+                fields :
+                createdtm :
+                expiretm :
+                starttm :
+                cmpletedtm :
+                datastarttm :
+                dataendtm :
+                aclass :
+                asset :
+            },
+            ...
+
+        """
+        api_path = '/0/private/'
+        endpoint = 'ExportStatus'
+        data = dict(zip(['report'],[report]))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
+
+    def get_report(self, id):
+        """
+        retrieve a processed data export
+        Args:
+            id: (string) REQUIRED - report ID to retrieve
+
+        Returns:
+            report : Binary zip archive containing report
+        """
+        api_path = '/0/private/'
+        endpoint = 'RetrieveExport'
+        data = dict(zip(['id'],[id]))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
+
+    def delete_report(self, id, type):
+        """
+        delete exported trades/ledgers report
+        Args:
+            id: (string) REQUIRED - ID of report to delete or cancel
+            type: (string) REQUIRED - delete or cancel
+                    "cancel" - can only be used for queued or processing reports
+                    "delete" - can only be used for reports that have already been processesd
+
+        Returns:
+            delete : (bool)
+        """
+        api_path = '/0/private/'
+        endpoint = 'RemoveExport'
+        data = dict(zip(['id','type'],[id, type]))
+        post_data = self.make_post_data(data)
+        return self.process_response(self.make_request(api_path, endpoint, post_data = post_data))
 
     ############# PRIVATE USER FUNDING AND TRADING FUNCTIONS ##############
 
