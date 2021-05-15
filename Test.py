@@ -139,5 +139,6 @@ def test_kraken_funding():
     print("_____________________________________________________")
     print(Kraken.get_withdrawstatus(asset="ETH"))
 
-
+if __name__ ==  "__main__" :
+    test_kraken_publics()
 
