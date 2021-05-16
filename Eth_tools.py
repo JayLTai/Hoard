@@ -3,6 +3,7 @@ from web3.gas_strategies.time_based import *
 import json
 import pdb
 
+
 class Wallet:
     """
     class to house all information regarding wallets
@@ -17,33 +18,35 @@ class Wallet:
         address   : (string) string representing the public wallet address/key
         prvKey    : (string) string representing the private key of the wallet
     """
-    def __init__(self,name="",currency="",address="",prvKey=""):
+
+    def __init__(self, name="", currency="", address="", prvkey=""):
         self.name = name
         self.currency = currency
         self.address = address
-        self.prvKey = prvKey
-    
-    def set_name(self,name):
+        self.prvkey = prvkey
+
+    def set_name(self, name):
         self.name = name
-    
-    def set_currency(self,currency):
+
+    def set_currency(self, currency):
         self.currency = currency
 
-    def set_address(self,address):
+    def set_address(self, address):
         self.address = address
 
-    def set_prvKey(self,prvKey):
-        self.prvKey = prvKey
+    def set_prvKey(self, prvKey):
+        self.prvkey = prvKey
 
     def json_import(self, key, value):
         switch = {
-            "Name"       : self.set_name,
-            "Currency"   : self.set_currency,
-            "Address"    : self.set_address,
-            "PrivateKey" : self.set_prvKey
+            "Name": self.set_name,
+            "Currency": self.set_currency,
+            "Address": self.set_address,
+            "PrivateKey": self.set_prvKey
         }
         func = switch.get(key, lambda arg1: "no parameters to be change")
         return func(value)
+
 
 class Eth_Harness:
     """
@@ -56,11 +59,12 @@ class Eth_Harness:
         endpoint : (string) a string representing the API endpoint to the ethereum network (web3)
         web3     : (web3 Object) web3 interface object
     """
-    def __init__(self,endpoint):
+
+    def __init__(self, endpoint):
         self.endpoint = endpoint
         self.web3 = None
 
-    def mk_simple_transaction(from_addr, to_addr, send_value):
+    def mk_simple_transaction(self, from_addr, to_addr, send_value):
         """
         creates a simple transaction that sends a certain amount of wei from one 
         address to another
@@ -72,17 +76,17 @@ class Eth_Harness:
             a dictionary object representing the created simple transaction
         """
         transaction = dict(
-            nonce = self.web3.eth.get_transaction_count(from_addr),
-            gasPrice = self.web3.eth.gasPrice,
+            nonce=self.web3.eth.get_transaction_count(from_addr),
+            gasPrice=self.web3.eth.gasPrice,
             # there must be an automated way to automatically set the gas price
             # based off of the gas strategy
-            gas = 100000,
-            to = to_addr,
-            value = self.self.web3.toWei(send_value, 'wei')
+            gas=100000,
+            to=to_addr,
+            value=self.web3.toWei(send_value, 'wei')
         )
         return transaction
 
-    def sign_transaction(transaction, prvkey):
+    def sign_transaction(self, transaction, prvkey):
         """
         signs a given transaction so it can be sent.
         Args:
@@ -93,7 +97,7 @@ class Eth_Harness:
         """
         return self.web3.eth.account.sign_transaction(transaction, prvkey)
 
-    def send_transaction(signd_txn):
+    def send_transaction(self, signd_txn):
         """
         sends a signed and serialized transaction. 
         converts that returned HexBytes object into a string hex hash
@@ -104,7 +108,7 @@ class Eth_Harness:
         """
         return self.web3.eth.send_raw_transaction(signd_txn.rawTransaction).hex()
 
-    def wait_for_receipt(txn_hash, timeout=120, poll_latency=0.1):
+    def wait_for_receipt(self, txn_hash, timeout=120, poll_latency=0.1):
         """
         waits for the traansaction specified by the given transaction hash to be 
         included in a block. Then returns the transaction receipt
@@ -131,9 +135,9 @@ class Eth_Harness:
                     'transactionIndex': 0,
                 })
         """
-        return self.web3.eth.waitForTransactionReceipt(txn_hash,timeout,poll_latency)
+        return self.web3.eth.waitForTransactionReceipt(txn_hash, timeout, poll_latency)
 
-    def get_tnx_block(block_id, full_transactions=False):
+    def get_tnx_block(self, block_id, full_transactions=False):
         """
         gets the block information of a given block, identified with its block hash
         Args:
@@ -167,7 +171,7 @@ class Eth_Harness:
         """
         return self.web3.eth.get_block(block_id, full_transactions)
 
-    def trade(send_Wallet, recv_Wallet, amount):
+    def trade(self, send_Wallet, recv_Wallet, amount):
         """
         Makes a trade between two wallets
         Args:
@@ -177,40 +181,34 @@ class Eth_Harness:
         Returns:
             nothing yet. probably should drop a return statement in here
         """
-        send_balance = self.web3.eth.get_balance(send_Wallet.address)
-        recv_balance = self.web3.eth.get_balance(recv_Wallet.address)
-        #Transaction sequence moving from send_Wallet to rcv_Wallet
-        print('{s:{c}^{n}}'.format(s=' creating transaction data ', n=80, c='*'))
-        txn = mk_simple_transaction(send_Wallet.address,recv_Wallet.address,amount)
+        # send_balance = self.web3.eth.get_balance(send_Wallet.address)
+        # recv_balance = self.web3.eth.get_balance(recv_Wallet.address)
+        # Transaction sequence moving from send_Wallet to rcv_Wallet
+        print('{s:{c}^{n}}'.format(s=' creating transaction data ', n=80, c='.'))
+        txn = self.mk_simple_transaction(send_Wallet.address, recv_Wallet.address, amount)
         print(txn)
-        print('{s:{c}^{n}}'.format(s=' signing transaction ', n=80, c='*'))
-        signed_txn = sign_transaction(txn, send_Wallet.prvkey)
+        print('{s:{c}^{n}}'.format(s=' signing transaction ', n=80, c='.'))
+        signed_txn = self.sign_transaction(txn, send_Wallet.prvkey)
         print("signed transaction hash = {}".format(signed_txn))
-        print('{s:{c}^{n}}'.format(s=' sending transaction ', n=80, c='*'))
-        txn_hash = send_transaction(signed_txn)
+        print('{s:{c}^{n}}'.format(s=' sending transaction ', n=80, c='.'))
+        txn_hash = self.send_transaction(signed_txn)
         print("transaction hash = {}".format(txn_hash))
-        print('{s:{c}^{n}}'.format(s=' getting transaction receipt ', n=80, c='*'))
-        receipt = wait_for_receipt(txn_hash)
+        print('{s:{c}^{n}}'.format(s=' getting transaction receipt ', n=80, c='.'))
+        receipt = self.wait_for_receipt(txn_hash)
         # pdb.set_trace()
         print(receipt)
-        print('{s:{c}^{n}}'.format(s=' getting block transaction was a part of ', n=80, c='*'))\
-        #realistically this part of confirming the status of the block & transaction (mined or not)
-        #might be able to be checked using the reciept? Not sure though
-        #Answer : Looks like once we get a receipt from the transaction, the transaction will have
+        print('{s:{c}^{n}}'.format(s=' getting block transaction was a part of ', n=80, c='.')) \
+            # realistically this part of confirming the status of the block & transaction (mined or not)
+        # might be able to be checked using the reciept? Not sure though
+        # Answer : Looks like once we get a receipt from the transaction, the transaction will have
         # been completed and added to the ledger (aka block is mined i believe)
-        block = get_tnx_block(receipt.blockNumber)
-        # pdb.set_trace()
+        block = self.get_tnx_block(receipt.blockNumber)
+        # above line for getting transactino block is flakey...
+        # not sure why, but the error that gets raised is as follows
+        # raise BlockNotFound(f"Block with id: {block_identifier} not found.")
+        # web3.exceptions.BlockNotFound: Block with id: 0x9c5b5d not found.
         print(block)
-        print("**********************************************************************************")
-        print("{name}'s OLD account balance in wei is : {amount}".format(name=send_Wallet.name,amount=send_balance))
-        send_balance = self.web3.eth.get_balance(send_Wallet.address)
-        print("{name}'s NEW account balance in wei is : {amount}".format(name=send_Wallet.name,amount=send_balance))
-        print("                   ----------------------------------------                       ")
-        print("{name}'s OLD account balance in wei is : {amount}".format(name=recv_Wallet.name,amount=recv_balance))
-        recv_balance = self.web3.eth.get_balance(recv_Wallet.address)
-        print("{name}'s NEW account balance in wei is : {amount}".format(name=recv_Wallet.name,amount=recv_balance))
-        #this sequence seems to be flakey occasionally. no idea why. probabaly a timing thing that might 
-        #might go away with differnet impelmentation
+
 
 class WSSEth(Eth_Harness):
     """
@@ -221,6 +219,7 @@ class WSSEth(Eth_Harness):
         Inherits Eth_Harness attributes
         web3     : (web3 Object) web3 interface object
     """
+
     def __init__(self, endpoint):
         super().__init__(endpoint)
         self.web3 = Web3(Web3.WebsocketProvider(endpoint))
@@ -235,7 +234,7 @@ class HTTPEth(Eth_Harness):
         Inherits Eth_Harness attributes
         web3     : (web3 Object) web3 interface object
     """
+
     def __init__(self, endpoint):
         super().__init__(endpoint)
         self.web3 = Web3(Web3.HTTPProvider(endpoint))
-
