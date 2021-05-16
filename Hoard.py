@@ -26,17 +26,7 @@ class Hoard:
                     {name (string) : (address,private key)}
 
     """
-    def __init__(self, Eth_Harness = None, wallets = {}, Kraken = None):
+    def __init__(self, Eth_Harness = None, Wallets = {}, Kraken = None):
         self.Eth_Harness = Eth_Harness
-        self.wallets = wallets
+        self.Wallets = Wallets
         self.Kraken_Harness = Kraken
-    
-    def add_wallet(self,name,currency,address,prvKey=""):
-        """
-        adds a new wallet (address,private key) tuple to the wallet dictionary
-        Args:
-            name    : (string) name of the wallet
-            address : (string) wallet public address
-            prvKey  : (string) wallet private key
-        """
-
