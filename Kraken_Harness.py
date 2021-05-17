@@ -4,12 +4,17 @@ import hashlib
 import hmac
 import json
 import urllib.request as urllib2
+import requests
 import zipfile
 import os
 import pdb
 
 
-class KrakenHarness:
+class KrakenHarness():
+    # enums(?) for pst and get paths
+    _GET = '/0/public/'
+    _POST = '/0/private/'
+
     def __init__(self, api_publickey="", api_privatekey="", timeout=10):
         self.api_domain = 'https://api.kraken.com'
         self.api_publickey = api_publickey
@@ -59,19 +64,31 @@ class KrakenHarness:
             nonce = self.get_nonce()
 
         api_postdata = post_data + '&nonce=' + nonce
+        params = bytes(api_postdata, 'utf-8')
         api_postdata = api_postdata.encode('utf-8')
 
         signature = self.sign_message(endpoint=endpoint, api_postdata=api_postdata, api_path=api_path, nonce=nonce)
 
+        headers = {
+            'API-Key': self.api_publickey,
+            'API-Sign': signature,
+            'User-Agent': "Kraken Rest API"
+        }
+
         # create request
         url = self.api_domain + api_path + endpoint
-        request = urllib2.Request(url, api_postdata)
-        request.add_header("API-Key", self.api_publickey)
-        request.add_header("API-Sign", signature)
-        request.add_header("User-Agent", "Kraken Rest API")
-        response = urllib2.urlopen(request, timeout=self.timeout)
+        # request = urllib2.Request(url, api_postdata)
+        # request.add_header("API-Key", self.api_publickey)
+        # request.add_header("API-Sign", signature)
+        # request.add_header("User-Agent", "Kraken Rest API")
+        # response = urllib2.urlopen(request, timeout=self.timeout)
+        if api_path == KrakenHarness._GET:
+            response = requests.get(url, params=params, headers=headers)
+        elif api_path == KrakenHarness._POST:
+            response = requests.post(url, )
         try:
-            return response.read().decode("utf-8")
+            # return response.read().decode("utf-8")
+            return response.content
         except UnicodeDecodeError:
             print(" !!!!! was not able to decode REST result, did you call get_report()? !!!!! ")
             print(" returning raw result ")
@@ -148,7 +165,7 @@ class KrakenHarness:
             unixtime : (int)
             rfc1123  : (string) "Sun, 21 Mar 21 14:23:14 +0000"
         """
-        api_path = '/0/public/'
+        api_path = KrakenHarness.GET
         endpoint = 'Time'
         return self.process_response(self.make_request(api_path, endpoint))
 
@@ -159,7 +176,7 @@ class KrakenHarness:
             status : (string)
             timestamp : (string) "2021-03-21T15:33:02Z"
         """
-        api_path = '/0/public/'
+        api_path = KrakenHarness.GET
         endpoint = 'SystemStatus'
         return self.process_response(self.make_request(api_path, endpoint))
 
@@ -180,7 +197,7 @@ class KrakenHarness:
                 display_decimals : (int)
             }
         """
-        api_path = '/0/public/'
+        api_path = KrakenHarness.GET
         endpoint = 'Assets'
         data = dict(zip(['aclass', 'asset'], [aclass, asset]))
         post_data = self.make_post_data(data)
@@ -220,7 +237,7 @@ class KrakenHarness:
                 ordermin :
             }
         """
-        api_path = '/0/public/'
+        api_path = KrakenHarness.GET
         endpoint = 'AssetPairs'
         data = dict(zip(['info', 'pair'], [info, pair]))
         post_data = self.make_post_data(data)
@@ -248,7 +265,7 @@ class KrakenHarness:
             }
 
         """
-        api_path = '/0/public/'
+        api_path = KrakenHarness.GET
         endpoint = 'Ticker'
         data = dict(zip(['pair'], [pair]))
         post_data = self.make_post_data(data)
@@ -280,7 +297,7 @@ class KrakenHarness:
                 [int, string, string, string, string, string, string, int]
             }
         """
-        api_path = '/0/public/'
+        api_path = KrakenHarness.GET
         endpoint = 'OHLC'
         data = dict(zip(['pair', 'interval', 'since'], [pair, interval, since]))
         post_data = self.make_post_data(data)
@@ -301,7 +318,7 @@ class KrakenHarness:
                 bids : bid side array of array entries[<price>, <volume>, <timestamp>(int)]
             }
         """
-        api_path = '/0/public/'
+        api_path = KrakenHarness.GET
         endpoint = 'Depth'
         data = dict(zip(['pair', 'count'], [pair, count]))
         post_data = self.make_post_data(data)
@@ -319,7 +336,7 @@ class KrakenHarness:
             pair name (string) : [[<price>, <volume>, <time>(int), <buy/sell>, <market/limit>, <miscellaneous>]]
             last : (string) id to be used as since when polling for new trade data
         """
-        api_path = '/0/public/'
+        api_path = KrakenHarness.GET
         endpoint = 'Trades'
         data = dict(zip(['pair', 'since'], [pair, since]))
         post_data = self.make_post_data(data)
@@ -334,7 +351,7 @@ class KrakenHarness:
             pair name (string) : [[<price>, <volume>, <time>(int), <buy/sell>, <market/limit>, <miscellaneous>]]
             last : (string) id to be used as since when polling for new trade data
         """
-        api_path = '/0/public/'
+        api_path = KrakenHarness.GET
         endpoint = 'Spread'
         data = dict(zip(['pair', 'since'], [pair, since]))
         post_data = self.make_post_data(data)
@@ -350,7 +367,7 @@ class KrakenHarness:
             ...
             ...
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'Balance'
         return self.process_response(self.make_request(api_path, endpoint))
 
@@ -371,7 +388,7 @@ class KrakenHarness:
             mf : free margin = equity - initial margin (maximum margin available to open new positions)
             ml : margin level = (equity / initial margin) * 100
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'TradeBalance'
         data = dict(zip(['asset'], [asset]))
         post_data = self.make_post_data(data)
@@ -415,7 +432,7 @@ class KrakenHarness:
                     trades: [trade IDs (string)]
                 }
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'OpenOrders'
         data = dict(zip(['trades', 'userref'], [trades, userref]))
         post_data = self.make_post_data(data)
@@ -471,7 +488,7 @@ class KrakenHarness:
                         trades: [trade IDs (string)]
                     }
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'ClosedOrders'
         data = dict(zip(['trades', 'userref', 'start', 'end', 'ofs', 'closetime'],
                         [trades, userref, start, end, ofs, closetime]))
@@ -519,7 +536,7 @@ class KrakenHarness:
                     trades: [trade IDs (string)]
                 }
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'QueryOrders'
         data = dict(zip(['txid', 'trades', 'userref'], [txid, trades, userref]))
         post_data = self.make_post_data(data)
@@ -559,7 +576,7 @@ class KrakenHarness:
                 margin:
                 misc:
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'TradesHistory'
         data = dict(zip(['type', 'trades', 'start', 'end', 'ofs'], [type, trades, start, end, ofs]))
         post_data = self.make_post_data(data)
@@ -588,7 +605,7 @@ class KrakenHarness:
                 margin :
                 misc :
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'QueryTrades'
         data = dict(zip(['txid', 'trades'], [txid, trades]))
         post_data = self.make_post_data(data)
@@ -624,7 +641,7 @@ class KrakenHarness:
                 oflags :
 
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'OpenPositions'
         data = dict(zip(['txid', 'docalcs', 'consoldiation'], [txid, docalcs, consolidation]))
         post_data = self.make_post_data(data)
@@ -664,7 +681,7 @@ class KrakenHarness:
             }
 
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'Ledgers'
         data = dict(zip(['asset', 'aclass', 'type', 'start', 'end', 'ofs'], [asset, aclass, type, start, end, ofs]))
         post_data = self.make_post_data(data)
@@ -691,7 +708,7 @@ class KrakenHarness:
                 balance:
 
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'QueryLedgers'
         data = dict(zip(['id', 'trades'], [id, trades]))
         post_data = self.make_post_data(data)
@@ -733,7 +750,7 @@ class KrakenHarness:
                 }
             }
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'TradeVolume'
         data = dict(zip(['pair', 'fee-info'], [[pair, fee_info]]))
         post_data = self.make_post_data(data)
@@ -760,7 +777,7 @@ class KrakenHarness:
         Returns:
             id:
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'AddExport'
         data = dict(zip(['report', 'format', 'description', 'fields', 'starttm', 'endtm'],
                         [report, format, description, fields, starttm, endtm]))
@@ -798,7 +815,7 @@ class KrakenHarness:
             ...
             ]
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'ExportStatus'
         data = dict(zip(['report'], [report]))
         post_data = self.make_post_data(data)
@@ -817,7 +834,7 @@ class KrakenHarness:
         Function returns:
             zip file object  - Library needed zipfile
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'RetrieveExport'
         data = dict(zip(['id'], [id]))
         post_data = self.make_post_data(data)
@@ -841,7 +858,7 @@ class KrakenHarness:
         Returns:
             delete : (bool)
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'RemoveExport'
         data = dict(zip(['id', 'type'], [id, type]))
         post_data = self.make_post_data(data)
@@ -911,7 +928,7 @@ class KrakenHarness:
                 close : order close description
             txid : transaction id
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'AddOrder'
         data = dict(zip(['userref', 'ordertype', 'type', 'volume', 'pair', 'pair',
                          'price', 'price2', 'leverage', 'oflags', 'starttm', 'expiretm',
@@ -932,7 +949,7 @@ class KrakenHarness:
         Returns:
             count: number of orders canceled(?)
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'CancelOrder'
         data = dict(zip(['txid'], [txid]))
         post_data = self.make_post_data(data)
@@ -944,7 +961,7 @@ class KrakenHarness:
         Returns:
             count: number of orders canceled(?)
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'CancelAll'
         return self.process_response(self.make_request(api_path, endpoint))
 
@@ -971,7 +988,7 @@ class KrakenHarness:
             currenttime : time of response sent
             triggertime : time of trigger of cancel
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'CancelAllOrdersAfter'
         data = dict(zip(['timeout'], [timeout]))
         post_data = self.make_post_data(data)
@@ -987,7 +1004,7 @@ class KrakenHarness:
             fee:
             gen-address
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'DepositMethods'
         data = dict(zip(['asset'], [asset]))
         post_data = self.make_post_data(data)
@@ -1004,7 +1021,7 @@ class KrakenHarness:
             expiretm:
             new:
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'DepositAddresses'
         data = dict(zip(['asset', 'method', 'new'], [asset, method, new]))
         post_data = self.make_post_data(data)
@@ -1028,7 +1045,7 @@ class KrakenHarness:
             time:
             status:
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'DepositStatus'
         data = dict(zip(['asset', 'method'], [asset, method]))
         post_data = self.make_post_data(data)
@@ -1048,7 +1065,7 @@ class KrakenHarness:
             amount:
             fee:
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'WithdrawInfo'
         data = dict(zip(['asset', 'key', 'amount'], [asset, key, amount]))
         post_data = self.make_post_data(data)
@@ -1065,7 +1082,7 @@ class KrakenHarness:
         Returns:
             refid:
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'Withdraw'
         data = dict(zip(['asset', 'key', 'amount'], [asset, key, amount]))
         post_data = self.make_post_data(data)
@@ -1091,7 +1108,7 @@ class KrakenHarness:
             status:
             status-prop:
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'WithdrawStatus'
         data = dict(zip(['asset', 'method'], [asset, method]))
         post_data = self.make_post_data(data)
@@ -1107,7 +1124,7 @@ class KrakenHarness:
         Returns:
             result:
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'WithdrawlCancel'
         data = dict(zip(['asset', 'refid'], [asset, refid]))
         post_data = self.make_post_data(data)
@@ -1126,7 +1143,7 @@ class KrakenHarness:
         Returns:
             refid:
         """
-        api_path = '/0/private/'
+        api_path = KrakenHarness.POST
         endpoint = 'WalletTransfer'
         data = dict(zip(['asset', 'from', 'to', 'amount'], [asset, frm, to, amount]))
         post_data = self.make_post_data(data)
