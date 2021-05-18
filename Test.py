@@ -164,8 +164,8 @@ def test_kraken_funding():
 
 
 def main():
-    test_web3()
-    test_web3_transfer()
+    # test_web3()
+    # test_web3_transfer()
     test_kraken_publics()
     test_kraken_userdata()
     test_kraken_funding()
