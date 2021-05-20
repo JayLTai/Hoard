@@ -72,13 +72,11 @@ class KrakenHarness():
 
         signature = self.sign_message(endpoint=endpoint, api_postdata=api_postdata, api_path=api_path, nonce=nonce)
 
-        headers = {
-            'API-Key': self.api_publickey,
-            # 'API-Key': "poop",
-            'API-Sign': signature,
-            'User-Agent': "Kraken Rest API"
-        }
-
+        headers = {}
+        headers['API-Key'] = self.api_publickey
+        headers['API-Sign'] = signature
+        headers['User-Agent'] = "Kraken REST API"
+        
         # create request
 
         # request = urllib2.Request(url, api_postdata)
