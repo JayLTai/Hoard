@@ -62,6 +62,9 @@ class KrakenHarness():
 
         if not nonce:
             nonce = self.get_nonce()
+
+        url = self.api_domain + api_path + endpoint
+
         data_dict["nonce"] = nonce
         api_postdata = post_data + '&nonce=' + nonce
         params = bytes(api_postdata, 'utf-8')
@@ -71,12 +74,13 @@ class KrakenHarness():
 
         headers = {
             'API-Key': self.api_publickey,
+            # 'API-Key': "poop",
             'API-Sign': signature,
             'User-Agent': "Kraken Rest API"
         }
 
         # create request
-        url = self.api_domain + api_path + endpoint
+
         # request = urllib2.Request(url, api_postdata)
         # request.add_header("API-Key", self.api_publickey)
         # request.add_header("API-Sign", signature)
@@ -87,7 +91,7 @@ class KrakenHarness():
         if api_path == KrakenHarness._GET:
             response = requests.get(url, params=params, headers=headers)
         elif api_path == KrakenHarness._POST:
-            response = requests.post(url, headers=headers, data = data_dict )
+            response = requests.post(url, headers=headers, data=data_dict)
 
         try:
             # return response.read().decode("utf-8")
