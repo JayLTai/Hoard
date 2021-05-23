@@ -1,6 +1,7 @@
 from Eth_tools import *
 from Kraken_Harness import *
 from Hoard import *
+import requests
 import json
 
 with open('keys.json') as data_file:
@@ -21,6 +22,26 @@ kPrv = data['Kraken']['TEST']['PrivateKey']
 Kraken = KrakenHarness(api_publickey=kAPI, api_privatekey=kPrv)
 
 Hoard = Hoard(Eth_Harness=Eth_Ropsten, Wallets=Wallets, Kraken=Kraken)
+
+def raw_post():
+    endpoint = 'Balance'
+    api_path = '/0/private/'
+    api_url = 'https://api.kraken.com'
+    nonce = Kraken.get_nonce()
+    key = Kraken.api_publickey
+    # nonce = '123'
+    d = {"nonce": nonce}
+    api_postdata = Kraken.make_post_data(d)
+    api_postdata = api_postdata.encode('utf-8')
+
+    sig = Kraken.sign_message(endpoint, api_postdata, api_path, nonce=nonce)
+    print(sig)
+
+    headers = {}
+    headers['API-Key'] = key
+    headers['API-Sign'] = sig
+    req = requests.post((api_url+api_path+endpoint), headers = headers, data = d)
+    print(req.content)
 
 
 def test_web3():
@@ -108,9 +129,7 @@ def test_kraken_userdata():
     print("___________  PRIVATES KRAKEN USER DATA  _____________")
     print("_____________________________________________________")
     print("kraken account balance        :   {a}".format(a=repr(Kraken.get_accountbalance())))
-    # THIS ONE IS AN INTERNAL ERROR????????
-    print("GET_TRADEBALANCE SKIPPED")
-    # print("account trade balance         :   {a}".format(a = repr(Kraken.get_tradebalance(asset = "ZUSD"))))
+    # print("account trade balance         :   {a}".format(a = repr(Kraken.get_tradebalance(asset = "ETH"))))
     print("account open orders           :   {a}".format(a=repr(Kraken.get_openorders())))
     print("account closed orders         :   {a}".format(a=repr(Kraken.get_closedorders())))
     # get_orderinfo
@@ -166,10 +185,12 @@ def test_kraken_funding():
 def main():
     # test_web3()
     # test_web3_transfer()
-    test_kraken_publics()
+    # test_kraken_publics()
     test_kraken_userdata()
     test_kraken_funding()
     test_kraken_trading()
+    # raw_post()
+
 
 
 if __name__ == "__main__":
