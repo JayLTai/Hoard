@@ -26,11 +26,21 @@ class KrakenHarness():
     # https://support.kraken.com/hc/en-us/articles/360022635592-Generate-authentication-strings-REST-API-\
     # https://support.kraken.com/hc/en-us/articles/360029054811-What-is-the-authentication-algorithm-for-private-endpoints-
     def sign_message(self, endpoint, api_postdata, api_path, nonce=""):
+        """
 
+        Args:
+            endpoint:
+            api_postdata: (bytes)
+            api_path:
+            nonce:
+
+        Returns:
+
+        """
         # Decode API private key from base64 format displayed in account management
         # api_secret = base64.b64decode(self.api_privatekey)
         api_secret = self.get_apisecret()
-
+        # nonce = "123"
         # Cryptographic hash algorithms
         sha256_data = nonce.encode('utf-8') + api_postdata
         sha256_hash = hashlib.sha256(sha256_data).digest()
@@ -46,6 +56,11 @@ class KrakenHarness():
 
     # creates a unique nonce
     def get_nonce(self):
+        """
+        function to get the latest nonce
+        Returns:
+            a nonce in the form of a string
+        """
         self.nonce = str(int(time.time() * 1000))
         return self.nonce
 
@@ -53,7 +68,7 @@ class KrakenHarness():
         return base64.b64decode(self.api_privatekey)
 
     # sends an HTTP request
-    def make_request(self, api_path, endpoint, post_data="", nonce="", data_dict = {}):
+    def make_request(self, api_path, endpoint, nonce="", data_dict={}):
         # create authentication headers
         # krakent requires the header to have an
         #   APIKey
@@ -65,18 +80,26 @@ class KrakenHarness():
 
         url = self.api_domain + api_path + endpoint
 
+        post_data = self.make_post_data(data_dict)
+        params = bytes(post_data, 'utf-8')
+
         data_dict["nonce"] = nonce
-        api_postdata = post_data + '&nonce=' + nonce
-        params = bytes(api_postdata, 'utf-8')
+
+        #if the there is any post data that is not a nonce
+        if post_data:
+            api_postdata = 'nonce=' + nonce + '&' + post_data
+        else:
+            api_postdata = 'nonce=' + nonce
         api_postdata = api_postdata.encode('utf-8')
 
         signature = self.sign_message(endpoint=endpoint, api_postdata=api_postdata, api_path=api_path, nonce=nonce)
 
-        headers = {}
-        headers['API-Key'] = self.api_publickey
-        headers['API-Sign'] = signature
-        headers['User-Agent'] = "Kraken REST API"
-        
+        headers = {
+            'API-Key': self.api_publickey,
+            'API-Sign': signature,
+            'User-Agent': "Kraken Rest API"
+        }
+
         # create request
 
         # request = urllib2.Request(url, api_postdata)
@@ -205,8 +228,7 @@ class KrakenHarness():
         api_path = KrakenHarness._GET
         endpoint = 'Assets'
         data = dict(zip(['aclass', 'asset'], [aclass, asset]))
-        post_data = self.make_post_data(data)
-        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+        return self.process_response(self.make_request(api_path, endpoint, data_dict=data))
 
     def get_assetpairs(self, info="", pair=""):
         """
@@ -245,8 +267,7 @@ class KrakenHarness():
         api_path = KrakenHarness._GET
         endpoint = 'AssetPairs'
         data = dict(zip(['info', 'pair'], [info, pair]))
-        post_data = self.make_post_data(data)
-        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+        return self.process_response(self.make_request(api_path, endpoint, data_dict=data))
 
     def get_tickerinfo(self, pair=""):
         """
@@ -273,8 +294,7 @@ class KrakenHarness():
         api_path = KrakenHarness._GET
         endpoint = 'Ticker'
         data = dict(zip(['pair'], [pair]))
-        post_data = self.make_post_data(data)
-        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+        return self.process_response(self.make_request(api_path, endpoint, data_dict=data))
 
     def get_ohlc(self, pair, interval="", since=""):
         """
@@ -305,8 +325,7 @@ class KrakenHarness():
         api_path = KrakenHarness._GET
         endpoint = 'OHLC'
         data = dict(zip(['pair', 'interval', 'since'], [pair, interval, since]))
-        post_data = self.make_post_data(data)
-        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+        return self.process_response(self.make_request(api_path, endpoint, data_dict=data))
 
     def get_orderbook(self, pair, count=""):
         """
@@ -326,8 +345,7 @@ class KrakenHarness():
         api_path = KrakenHarness._GET
         endpoint = 'Depth'
         data = dict(zip(['pair', 'count'], [pair, count]))
-        post_data = self.make_post_data(data)
-        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+        return self.process_response(self.make_request(api_path, endpoint, data_dict=data))
 
     def get_recenttrades(self, pair, since=""):
         """
@@ -344,8 +362,7 @@ class KrakenHarness():
         api_path = KrakenHarness._GET
         endpoint = 'Trades'
         data = dict(zip(['pair', 'since'], [pair, since]))
-        post_data = self.make_post_data(data)
-        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+        return self.process_response(self.make_request(api_path, endpoint, data_dict=data))
 
     def get_recentspread(self, pair, since=""):
         """
@@ -359,8 +376,7 @@ class KrakenHarness():
         api_path = KrakenHarness._GET
         endpoint = 'Spread'
         data = dict(zip(['pair', 'since'], [pair, since]))
-        post_data = self.make_post_data(data)
-        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+        return self.process_response(self.make_request(api_path, endpoint, data_dict=data))
 
     ############# PRIVATE USER DATA FUNCTIONS ##############
 
@@ -396,8 +412,7 @@ class KrakenHarness():
         api_path = KrakenHarness._POST
         endpoint = 'TradeBalance'
         data = dict(zip(['asset'], [asset]))
-        post_data = self.make_post_data(data)
-        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+        return self.process_response(self.make_request(api_path, endpoint, data_dict=data))
 
     def get_openorders(self, trades=False, userref=""):
         """
