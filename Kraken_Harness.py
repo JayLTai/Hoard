@@ -68,15 +68,14 @@ class KrakenHarness():
         return base64.b64decode(self.api_privatekey)
 
     # sends an HTTP request
-    def make_request(self, api_path, endpoint, nonce="", data_dict={}):
+    def make_request(self, api_path, endpoint, data_dict={}):
         # create authentication headers
         # krakent requires the header to have an
         #   APIKey
         #   Nonce
         #   Authenticator
 
-        if not nonce:
-            nonce = self.get_nonce()
+        nonce = self.get_nonce()
 
         url = self.api_domain + api_path + endpoint
 
@@ -166,11 +165,12 @@ class KrakenHarness():
         post_data = ''
         for key, item in data.items():
             # if the item is not an empty string then add it to the post_datwa
-            if not not item:
+            if not item and item != '':
                 if not post_data:
                     post_data = '{k}={i}'.format(k=key, i=item)
                 else:
                     post_data = post_data + '&{k}={i}'.format(k=key, i=item)
+        print()
         return post_data
 
     ######################
@@ -414,7 +414,7 @@ class KrakenHarness():
         data = dict(zip(['asset'], [asset]))
         return self.process_response(self.make_request(api_path, endpoint, data_dict=data))
 
-    def get_openorders(self, trades=False, userref=""):
+    def get_openorders(self, trades="", userref=""):
         """
         Retrieve information about currently open orders.
         Args:
@@ -455,8 +455,7 @@ class KrakenHarness():
         api_path = KrakenHarness._POST
         endpoint = 'OpenOrders'
         data = dict(zip(['trades', 'userref'], [trades, userref]))
-        post_data = self.make_post_data(data)
-        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+        return self.process_response(self.make_request(api_path, endpoint, data_dict=data))
 
     def get_closedorders(self, trades=False, userref="", start="", end="", ofs="", closetime="both"):
         """

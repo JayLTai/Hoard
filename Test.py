@@ -24,13 +24,14 @@ Kraken = KrakenHarness(api_publickey=kAPI, api_privatekey=kPrv)
 Hoard = Hoard(Eth_Harness=Eth_Ropsten, Wallets=Wallets, Kraken=Kraken)
 
 def raw_post():
-    endpoint = 'Balance'
+    endpoint = 'OpenOrders'
     api_path = '/0/private/'
     api_url = 'https://api.kraken.com'
     nonce = Kraken.get_nonce()
     key = Kraken.api_publickey
     # nonce = '123'
-    d = {"nonce": nonce}
+    d = {"nonce": nonce,
+         "trades": True}
     api_postdata = Kraken.make_post_data(d)
     api_postdata = api_postdata.encode('utf-8')
 
@@ -129,6 +130,7 @@ def test_kraken_userdata():
     print("___________  PRIVATES KRAKEN USER DATA  _____________")
     print("_____________________________________________________")
     print("kraken account balance        :   {a}".format(a=repr(Kraken.get_accountbalance())))
+    # not too sure why trade balance isn't working
     # print("account trade balance         :   {a}".format(a = repr(Kraken.get_tradebalance(asset = "ETH"))))
     print("account open orders           :   {a}".format(a=repr(Kraken.get_openorders())))
     print("account closed orders         :   {a}".format(a=repr(Kraken.get_closedorders())))
@@ -185,11 +187,12 @@ def test_kraken_funding():
 def main():
     # test_web3()
     # test_web3_transfer()
+    # raw_post()
     # test_kraken_publics()
     test_kraken_userdata()
-    test_kraken_funding()
-    test_kraken_trading()
-    # raw_post()
+    # test_kraken_funding()
+    # test_kraken_trading()
+
 
 
 
