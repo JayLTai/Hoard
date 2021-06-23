@@ -30,7 +30,7 @@ class KrakenHarness():
 
         Args:
             endpoint:
-            api_postdata: (bytes)
+            api_postdata: (string)
             api_path:
             nonce:
 
@@ -38,11 +38,10 @@ class KrakenHarness():
 
         """
         # Decode API private key from base64 format displayed in account management
-        # api_secret = base64.b64decode(self.api_privatekey)
         api_secret = self.get_apisecret()
         # nonce = "123"
         # Cryptographic hash algorithms
-        sha256_data = nonce.encode('utf-8') + api_postdata
+        sha256_data = nonce.encode('utf-8') + api_postdata.encode('utf-8')
         sha256_hash = hashlib.sha256(sha256_data).digest()
 
         hmac_sha256_data = api_path.encode('utf-8') + endpoint.encode('utf-8') + sha256_hash
@@ -85,11 +84,14 @@ class KrakenHarness():
         data_dict["nonce"] = nonce
 
         #if the there is any post data that is not a nonce
-        if post_data:
-            api_postdata = 'nonce=' + nonce + '&' + post_data
-        else:
-            api_postdata = 'nonce=' + nonce
-        api_postdata = api_postdata.encode('utf-8')
+        # if post_data:
+        #     api_postdata = 'nonce=' + nonce + '&' + post_data
+        # else:
+        #     api_postdata = 'nonce=' + nonce
+
+        # is it because we are posting the wrong sequence as in #nonce=#postdata
+        # as opposed to #nonce=#&postdata
+        api_postdata = 'nonce=' + nonce + post_data
 
         signature = self.sign_message(endpoint=endpoint, api_postdata=api_postdata, api_path=api_path, nonce=nonce)
 
@@ -99,13 +101,15 @@ class KrakenHarness():
             'User-Agent': "Kraken Rest API"
         }
 
-        # create request
-
-        # request = urllib2.Request(url, api_postdata)
-        # request.add_header("API-Key", self.api_publickey)
-        # request.add_header("API-Sign", signature)
-        # request.add_header("User-Agent", "Kraken Rest API")
-        # response = urllib2.urlopen(request, timeout=self.timeout)
+        #clear the empty parameters from the data dictionary
+        #empty string arguments do not represent defaults in the kraken API
+        #therefore if a parameter isn't used then it should be removed
+        r = []
+        for key,val in data_dict.items():
+            if val == '':
+                r.append(key)
+        for key in r:
+            del data_dict[key]
 
         #requests library test
         if api_path == KrakenHarness._GET:
@@ -165,7 +169,7 @@ class KrakenHarness():
         post_data = ''
         for key, item in data.items():
             # if the item is not an empty string then add it to the post_datwa
-            if not item and item != '':
+            if item != '':
                 if not post_data:
                     post_data = '{k}={i}'.format(k=key, i=item)
                 else:
@@ -511,8 +515,7 @@ class KrakenHarness():
         endpoint = 'ClosedOrders'
         data = dict(zip(['trades', 'userref', 'start', 'end', 'ofs', 'closetime'],
                         [trades, userref, start, end, ofs, closetime]))
-        post_data = self.make_post_data(data)
-        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+        return self.process_response(self.make_request(api_path, endpoint, data_dict=data))
 
     def get_orderinfo(self, txid, trades=False, userref=""):
         """
@@ -558,8 +561,7 @@ class KrakenHarness():
         api_path = KrakenHarness._POST
         endpoint = 'QueryOrders'
         data = dict(zip(['txid', 'trades', 'userref'], [txid, trades, userref]))
-        post_data = self.make_post_data(data)
-        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+        return self.process_response(self.make_request(api_path, endpoint, data_dict=data))
 
     def get_tradeshistory(self, type="", trades=False, start="", end="", ofs=""):
         """
@@ -598,8 +600,7 @@ class KrakenHarness():
         api_path = KrakenHarness._POST
         endpoint = 'TradesHistory'
         data = dict(zip(['type', 'trades', 'start', 'end', 'ofs'], [type, trades, start, end, ofs]))
-        post_data = self.make_post_data(data)
-        return self.process_response(self.make_request(api_path, endpoint, post_data=post_data))
+        return self.process_response(self.make_request(api_path, endpoint, data_dict=data))
 
     def get_tradesinfo(self, txid, trades=False):
         """

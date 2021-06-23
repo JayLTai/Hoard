@@ -131,9 +131,10 @@ def test_kraken_userdata():
     print("_____________________________________________________")
     print("kraken account balance        :   {a}".format(a=repr(Kraken.get_accountbalance())))
     # not too sure why trade balance isn't working
-    # print("account trade balance         :   {a}".format(a = repr(Kraken.get_tradebalance(asset = "ETH"))))
+    print("account trade balance         :   {a}".format(a = repr(Kraken.get_tradebalance(asset = "ETH"))))
     print("account open orders           :   {a}".format(a=repr(Kraken.get_openorders())))
-    print("account closed orders         :   {a}".format(a=repr(Kraken.get_closedorders())))
+    # this also gets an invalid key error.....
+    # print("account closed orders         :   {a}".format(a=repr(Kraken.get_closedorders())))
     # get_orderinfo
     print(" GET_ORDERINFO SKIPPED")
     print("account trade history         :   {a}".format(a=repr(Kraken.get_tradeshistory())))
